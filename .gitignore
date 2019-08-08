@@ -1,0 +1,9 @@
+/spark-warehouse
+/META-INF
+/target
+/out
+/src/test
+.idea
+*.iml
+*.class
+*.log

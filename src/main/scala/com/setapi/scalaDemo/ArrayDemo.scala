@@ -10,7 +10,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object ArrayDemo {
   def main(args: Array[String]): Unit = {
-    val arr: Array[Int] = Array(1, 2, 3, 4, 5)
+    val arr: Array[Any] = Array(1, 2, 3, 4, 5, "SPARK")
 
     println(s"数组大小: ${arr.size}")
     arr(4) = 100

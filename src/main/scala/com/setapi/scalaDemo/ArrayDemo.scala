@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   **/
 
-object ArrarDemo {
+object ArrayDemo {
   def main(args: Array[String]): Unit = {
     val arr: Array[Int] = Array(1, 2, 3, 4, 5)
 

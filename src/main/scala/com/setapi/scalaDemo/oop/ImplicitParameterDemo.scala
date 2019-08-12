@@ -28,5 +28,6 @@ object ImplicitParameterDemo {
 
     // 到了考场签到
     signForMeetup("xieyie")
+
   }
 }

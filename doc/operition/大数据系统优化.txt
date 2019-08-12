@@ -1,0 +1,2049 @@
+****************搞不定的时候，上官网****************
+****************搞不定的时候，上官网****************
+****************搞不定的时候，上官网****************
+
+
+CDH下载版本：
+        archive.cloudera.com/cdh5/cdh/5/
+        兼容性更好
+        
+****************************HDFS********************
+安装文档CDH：
+https://blog.csdn.net/wolf_333/article/details/89071203
+
+系统优化：
+
+6. 配置NTP服务（所有节点）
+
+
+7. 修改Linux swappiness参数(所有节点）
+为了避免服务器使用swap功能而影响服务器性能，一般都会把vm.swappiness修改为0（cloudera建议10以下）
+echo 0 > /proc/sys/vm/swappiness
+这样操作重启机器还是还原
+修改配置文件，开机自动设置参数
+编辑vim /etc/sysctl.conf
+在最后添加vm.swappiness=0
+
+上述方法rhel6有效，rhel7.2中:tuned服务会动态调整系统参数
+查找tuned中配置，直接修改配置
+cd /usr/lib/tuned/
+grep “vm.swappiness” * -R 查询出后依次修改
+
+
+
+8. 禁用透明页(所有节点）
+echo never > /sys/kernel/mm/transparent_hugepage/defrag
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+永久生效 在/etc/rc.local 添加上面命令
+
+给与可执行权限：chmod +x /etc/rc.d/rc.local
+
+
+9. MySQL安装之yum安装
+ 在CentOS7中默认安装有MariaDB，这个是MySQL的分支，但为了需要，还是要在系统中安装MySQL，而且安装完成之后可以直接覆盖掉MariaDB。
+
+1. 下载并安装MySQL官方的 Yum Repository
+1
+[root@BrianZhu /]# wget -i -c http://dev.mysql.com/get/mysql57-community-release-el7-10.noarch.rpm
+　　使用上面的命令就直接下载了安装用的Yum Repository，大概25KB的样子，然后就可以直接yum安装了。
+
+1
+[root@BrianZhu /]# yum -y install mysql57-community-release-el7-10.noarch.rpm
+　　下面就是使用yum安装MySQL了
+
+1
+[root@BrianZhu /]# yum -y install mysql-community-server
+　　这步可能会花些时间，安装完成后就会覆盖掉之前的mariadb。
+
+
+
+设计大数据计算平台架构，确保可扩展、易维护、高性能，在LINUX系统下依据大数据的特点优化内核参数。
+使用HADOOP(CDH)、HBASE、HIVE等服务高效运行，高度SPARK、FLUME、KAFKA、SQOOU等基于大数据的组件高性能运行
+制定合理的运行机制，使用统一大数据平台，为各个团队服务，高效高度增加平台使用率。
+
+
+--------------------------------
+/opt/cloudera/cm/schema/scm_prepare_database.sh mysql cmserver cmserveruser Yyf5211314!
+
+
+
+
+
+
+
+
+
+
+
+
+********************HADOOP***************
+
+安装配置教程：
+https://blog.csdn.net/hliq5399/article/details/78193113
+
+
+
+
+
+
+
+
+
+****************HVIE**********************
+CREATE EXTERNAL TABLE IF NOT EXISTS HiveOnHdfs.student(
+id int,
+name string,
+age int,
+sex string
+
+) COMMENT "学生表"
+ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t" 
+STORED AS PARQUET;
+
+---------------加载本地件
+load data local inpath "/opt/hive/table_student.txt" into table HiveOnHdfs.student;
+-- OVERWRITE覆盖
+
+
+
+-----------
+create table IF NOT EXISTS HiveOnHdfs.emp(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+) row format delimited fields terminated by '\t'
+STORED AS PARQUET;
+
+:DATA-------------------------------------------
+
+7369	SMIT CLERK 7902	1980-12-17	800.00	NULL	20
+7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30
+7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30
+7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20
+7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30
+7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30
+7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10
+7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20
+7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10
+7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30
+7876	ADAMS	CLERK7788	1987-5-23	1100.0	NULL	20
+7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30
+7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20
+7934	MILLER	CLERK	7782	1982-1-23	1300	NULL	10
+
+
+
+
+
+
+create table IF NOT EXISTS HiveOnHdfs.dept(
+ deptno int,
+ dname string,
+ loc string
+) row format delimited fields terminated by '\t'
+STORED AS PARQUET;
+
+:DATA-------------------------------------------
+
+10	ACCOUNTING	NEW YORK
+20	RESEARCH	DALLAS
+30	SALES	CHICAGO
+40	OPERATIONS	BOSTON	
+
+
+----------------------------------
+创建外部表:
+	数据库的链接，没有HDFS下的文件存在
+	或者通过数据文件，恢复数据库，不论在哪个HDFS位置均可
+create external table if not exists default.emp(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+) row format delimited fields terminated by '\t'
+location '/user/hive/warehouse/hiveonhdfs.db/emp/';
+
+
+-----------------------
+创建分区表
+create table IF NOT EXISTS HiveOnHdfs.emp_partition(
+empno int,
+ename string,
+job string,
+mgr int,
+hiredate string,
+sal double,
+comm double,
+deptno int
+) partitioned by (month string, day string) 
+row format delimited fields terminated by '\t'
+
+load data local inpath "/opt/hive/table_emp.txt" into table HiveOnHdfs.emp_partition partition(month=201907, day=13);
+
+show partitions HiveOnHdfs.emp_partition;
+
+select * from HiveOnHdfs.emp_partition where month=201907 AND day=13;
+
+直接上传文件到HDFS中，再读入分区
+hdfs dfs -mkdir -p /user/hive/warehouse/hiveonhdfs.db/emp_partition/month=201906/day=14
+hdfs dfs -put table_emp.txt /user/hive/warehouse/hiveonhdfs.db/emp_partition/month=201906/day=14
+msck repair table HiveOnHdfs.emp_partition;
+或
+alter table HiveOnHdfs.emp_partition add partition(month=201906, day=14);
+show partitions HiveOnHdfs.emp_partition;
+
+
+----------------------
+清空表
+truncate table table_name;
+
+-------------------------
+COPY某些列
+create table HiveOnHdfs.emp_bak 
+  as select * from HiveOnHdfs.emp;
+
+----------------------
+COPY表结构
+create table HiveOnHdfs.emp_like
+    like HiveOnHdfs.emp;
+
+
+--------------------------
+INSERT INTO TABLE HiveOnHdfs.emp_bak 
+  SELECT * from HiveOnHdfs.emp;
+	
+	
+--------------------
+导出数据到本地
+insert overwrite local directory "/opt/hive/export_table" row format delimited fields terminated by "\t" 
+    > SELECT * FROM HiveOnHdfs.emp_bak;
+
+导出数据到HDFS
+不要 local
+
+hive -e "select * from table;" > file
+
+使用工具
+hive表 sqoop -> mysql
+
+
+------------查询 SELECT------------------
+
+select
+    d.deptno, d.dname, e.ename, e.sal
+from 
+    emp e inner join dept d 
+    on e.deptno=d.deptno
+;
+
+----------------------------
+select
+    d.deptno, d.dname, e.ename, e.sal
+from 
+    emp e right join dept d 
+    on e.deptno=d.deptno
+;
+
+----------------------------
+select
+    collect_set(d.dname)[0] as depart_name, 
+    max(e.sal) m_sal
+from 
+    emp e inner join dept d
+    on e.deptno=d.deptno
+group by e.deptno
+    having m_sal>= 3000
+;
+
+----------------------------
+select 
+    collect_set(d.deptno), 
+    collect_set(d.dname), 
+    sum(sal) sum_sal 
+from 
+    emp e inner join dept d 
+    on e.deptno=d.deptno 
+group by e.deptno
+order by e.deptno
+;    
+
+----------------------
+distribute 只支持简单的查询？
+它控制map端在reduce上如何分区
+局部操作。所以后面不能接全局的关键字，如group by
+select * from emp distribute by empno  sort by empno;
+
+select * from emp cluster by empno;
+ 
+--------------------------
+视图
+    > create view v_salary as
+    > select * from emp where sal > 1000;
+
+-----------------------------
+索引：失败。！！！
+和部署配置有关？
+
+
+----------------
+内置函数
+show functions;
+
+desc function extended concat;
+
+select substr(hiredate, 1, 4) from emp;
+
+select cast(1.1 as int);
+
+select UPPER("xieie");
+
+select day(hiredate) from emp;
+
+select unix_timestamp("2016-09-03 14:00:11");
+
+select from_unixtime(1472704474);
+
+select day(from_unixtime(1472704474));
+
+
+---------------------------------
+UDAF：
+
+package com.setapi.api.hdfs
+import org.apache.commons.lang.StringUtils
+import org.apache.hadoop.hive.ql.exec.UDF
+import org.apache.hadoop.io.Text
+
+class HiveApi extends UDF{
+  def lower(str: String): Text = {
+    if (StringUtils.isEmpty(str)) return null
+
+    return new Text(str.toLowerCase())
+  }
+
+  def evaluate(str: String): Text = {
+    return lower(str)
+  }
+}
+
+
+
+hive> add jar /opt/hive/hdfs.jar;
+      create temporary function my_lower AS 'com.setapi.api.hdfs.HiveApi';
+      select my_lower("xiEyIE");
+      select ename, my_lower(ename) from emp;
+      select my_lower(ename) from emp where ename is not NULL;
+
+
+
+*************SQOOP********************
+协作框架，数据导入/导出
+
+    -----
+    FLUME：实时日志
+    OOZIE:任务高度
+    HUE：所有的HADOOP的WEBUI
+    
+    SQOOP 1.x与2.x不兼容
+    
+CDH下载版本：
+        archive.cloudera.com/cdh5/cdh/5/
+        兼容性更好
+
+--列出数据库        
+sqoop list-databases \
+    --connect jdbc:mysql://hnamenode:3306 \
+    --username root \
+    --password birdhome \
+    
+--导入
+sqoop import \
+    --connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+    --username root \
+    --password birdhome \
+    --table mysql_to_hdfs \
+    --bindir ./ \
+    --num-mappers 4 \
+    --target-dir /user/root/mysql_database/ \
+    --delete-target-dir \
+    --fields-terminated-by "\t" \
+
+--增量导入
+sqoop import \
+    --connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+    --username root \
+    --password birdhome \
+    --table mysql_to_hdfs \
+    --bindir ./ \
+    --num-mappers 1 \
+    --target-dir /user/root/mysql_database/ \
+    --fields-terminated-by "\t" \
+    --as-parquetfile \
+    --check-column id \
+    --incremental append \
+    --last-value 15
+
+
+--导出，parquet文件导出失败
+sqoop export \
+    --connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+    --username root \
+    --password birdhome \
+    --table hdfs_to_mysql \
+    --bindir ./ \
+    --num-mappers 1 \
+    --export-dir /user/root/mysql_database/ \
+    # --fields-terminated-by "\t" 
+
+    
+？？只能导HIVE到MYSQL？
+
+
+--导入到HIVE
+sqoop import \
+    --connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+    --username root \
+    --password birdhome \
+    --table mysql_to_hdfs \
+    --bindir ./ \
+    --num-mappers 4 \
+    --target-dir /user/root/mysql_database/ \
+    --delete-target-dir \
+    --fields-terminated-by "\t" \
+    --hive-database hiveonhdfs \
+    --hive-table mysql_to_hive \
+    --hive-import 
+    
+
+--从HIVE导出，
+sqoop export \
+    --connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+    --username root \
+    --password birdhome \
+    --table hdfs_to_mysql \
+    --bindir ./ \
+    --num-mappers 1 \
+    --export-dir /user/hive/warehouse/hiveonhdfs.db/mysql_to_hive \
+    --input-fields-terminated-by "\t" \
+
+---SQOO脚本
+sqoop --options-file ./sqoop_script.opt
+    
+
+----HIVE数据压缩
+
+
+
+----BEELINE
+hive # ./hive --service hiveserver2
+beeline> !connect jdbc:hive2://192.168.0.212:10000
+
+ 
+---------------
+创建压缩表-存储格式
+
+CREATE TABLE IF NOT EXISTS hiveonhdfs.compress_of_orc
+(
+id int,
+name string,
+age int
+) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+STORED AS ORC;
+
+//LOAD失败。ORC不支持导入TXT文本？
+load data local inpath '/opt/hive/table_orc.txt' into table HiveOnHdfs.compress_of_orc;
+
+
+
+---CASE WHEN THEN ELSE
+SELECT ename, sal, deptno,
+case
+        when deptno = 30    then '系统部'
+        when deptno = 20    then '研发部'
+        when deptno = 10    then '总监'
+        else '未发现'
+end NewDept
+        
+FROM HiveOnHdfs.emp;
+
+
+
+------------
+数据库备份
+mysqldump -uroot -pbirdhome databaasename > /pt/to/backup/file
+
+
+-----------------------------
+数据库还原
+# mysql -uroot -p databases < /pt/to/backup/file.sql
+
+mysql> source /path/to/backup/file.sql
+
+
+
+---------------------------------
+传递变量
+hive -hivevar table_name='emp' -hivevar salary=1500 -e '
+select * from ${hivevar:table_name} 
+where sal > ${hivevar:salary}
+'
+
+hive -hiveconf table_name='emp' -hiveconf salary=1500 -e '
+select * from ${hiveconf:table_name} 
+where sal > ${hiveconf:salary}
+'
+
+hive -hiveconf table_name='emp' -hiveconf salary=1500 -f ./hiveconf.hql
+
+
+
+
+-----------项目案例-------------
+1, 创建HIVE库/表
+CREATE DATABASE IF NOT EXISTS web_log;
+
+"""
+111.201.203.220 - - 
+[19/Mar/2017:03:46:24 +0800] 
+"POST /member.php?mod=logging&action=login&loginsubmit=yes&loginhash=LtKnZ HTTP/1.1" 
+200 
+16777 
+"http://www.joywe.com/member.php?mod=logging&action=login" 
+"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+
+"""
+
+CREATE EXTERNAL TABLE IF NOT EXISTS web_log.joywe_com (
+--id              INT     PRIMARY KEY AUTO_INCREMENT,
+remote_addr     STRING,
+time_local      STRING,
+req_method      STRING,
+url             STRING,
+http_version    STRING,
+status          STRING,
+page_size       STRING,
+http_referer    STRING,
+user_aggent     STRING
+)
+PARTITIONED BY (month STRING, day STRING, hour STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+//不支持date字段
+
+2,--加载数据
+hdfs dfs -mkdir -p /user/hive/warehouse/web_log.db/joywe_com/month=201703/day=20/hour=03
+hdfs dfs -put /opt/www.joywe.com_nginx.log-20170320 /user/hive/warehouse/web_log.db/joywe_com/month=201703/day=20/hour=03
+
+ALTER TABLE joywe_com ADD PARTITION(month='201703', day=20, hour=03) location "/user/hive/warehouse/web_log.db/joywe_com/month=201703/day=20/hour=03";
+
+//也可以
+load data local inpath '/opt/www.joywe.com_nginx.log-20170320' into table joywe_com partition(month='201703', day=20, hour=03);
+
+msck repair table web_log.joywe_com;
+
+//实际环境中，将在代码中实现？或SHELL中？
+
+SHOW PARTITIONS web_log.joywe_com;
+
+--清空内部表
+truncate table web_log.joywe_com;
+
+--清空外部表
+alter table web_log.joywe_com drop partition(month='201703', day=20, hour=03);
+
+
+
+3,----结果存储
+CREATE TABLE web_log.pv_uv_hourly (
+monty   INT,
+day     INT,
+hour    INT,
+pv      INT,
+uv      INT
+) row format delimited fields terminated by '\t';
+
+4,---结果指标存储
+INSERT OVERWRITE TABLE web_log.pv_uv_hourly
+    SELECT month, day, hour, 
+        count(url) pv, 
+        count(distinct url) uv
+    FROM web_log.joywe_com
+        WHERE month='201703' AND day='20'
+    GROUP BY month, day, hour
+;    
+        
+
+5,----导出到MYSQL:SQOOP
+
+# cat pv_uv.opt 
+export 
+--connect 
+  jdbc:mysql://hnamenode:3306/web_log 
+--username 
+  root 
+--password 
+  birdhome 
+--table 
+  joywe_com
+--bindir 
+  /opt/SQOOP/workload 
+--num-mappers 
+  1 
+--export-dir 
+  /user/hive/warehouse/web_log.db/pv_uv_hourly
+--input-fields-terminated-by 
+  "\t" 
+
+  
+# ./sqoop --options-file /opt/SQOOP/scripts/pv_uv.opt
+
+
+
+-----HIVE优化
+1，外部表，分区表结合
+    数据存储格式： ORCFILE
+    数据压缩：anappy
+    优化SQL
+2，MapReduce
+    reduce个数，处理速度与IO
+    JVM:第一个JOB会使用一个JVM，可使用 hive> set mapreduce.job.jvm.numtasks=1
+    并行执行：hive.exec.parallel=true
+    block(split) hive.merge.size.per.task=256000000
+    
+3，严厉模式
+    对分析表，不加where不能查
+    join条件一定是 on
+    order by 不加  limit 不能查
+
+4，数据倾斜
+    group by维度过小
+    小表 join 大表
+    count(distinct)效率低，可以先group by 代替
+    count(distinct url)记录非常多时，可以 set hive.groupby.skewindata=true; 负责均衡
+    将一个一个的JOB拆分为2个，将由2个REDUCE处理，第一个REDUCE处理随机分发过来的KEY，VALUE，产生一个中间结果，第二个REDUCE负责综合处理
+    无效ID关联时倾斜： CASE WHEN a.id is NULL THEN CONCAT('dp_hive', RAND()) ELSE a.id END = b.id
+    数据类型转换为字符串类型
+    hive 的 UNION ALL 优化多表成一个JOB
+5, UDF优化    
+
+
+
+---------------------
+HIVE进阶案例
+日期, 数据产生的时间
+PV, URL统计数量
+UV, 用户数量
+登陆人数
+访客人数
+平均方问时长，每一个
+二跳率
+独立IP数 
+
+
+
+************FLUME******************
+
+cp /opt/hadoop/share/hadoop/common/hadoop-common-3.1.2.jar /opt/hadoop/share/hadoop/common/lib/commons-configuration2-2.1.1.jar /opt/hadoop/share/hadoop/common/lib/hadoop-auth-3.1.2.jar /opt/hadoop/share/hadoop/hdfs/hadoop-hdfs-3.1.2.jar /opt/flume/apache-flume-1.9.0-bin/lib/
+
+cp /opt/hadoop/etc/hadoop/core-site.xml /opt/hadoop/etc/hadoop/hdfs-site.xml /opt/flume/apache-flume-1.9.0-bin/conf/
+
+=======================================
+# 运行单节点
+#cat flume-telnet.properties
+
+# 设置代理AGENT
+first.sources=so1
+first.sinks=si1
+first.channels=c1
+
+# 配置数据源
+first.sources.so1.type=netcat
+first.sources.so1.bind=hnamenode
+first.sources.so1.port=4444
+
+# 接收器，汇聚点
+first.sinks.si1.type=logger
+
+# 使用缓冲内存中事件通道
+first.channels.c1.type=memory
+first.channels.c1.capacity=1000
+first.channels.c1.transactionCapacity=100
+
+# 将源与汇聚点，连接到通道
+first.sources.so1.channels=c1
+first.sinks.si1.channel=c1
+
+
+------------
+执行：
+./bin/flume-ng agent --conf my_flume_conf --conf-file /opt/flume/apache-flume-1.9.0-bin/conf/flume-telnet.properties --name first -Dflume.root.logger=INFO,console
+
+./bin/flume-ng agent --conf-file /opt/flume/apache-flume-1.9.0-bin/conf/flume-telnet.properties --name first -Dflume.root.logger=INFO,console
+
+
+=======================================
+监听日志文件，实时写入HDFS
+
+# cat flume-to-hdfs.properties
+
+tohdfs.sources=r2
+tohdfs.sinks=k2
+tohdfs.channels=c2
+
+#可执行的命令行
+tohdfs.sources.r2.type=exec
+tohdfs.sources.r2.command=tail -F /var/log/mylog.log
+tohdfs.sources.r2.shell=/bin/bash -c
+
+tohdfs.channels.c2.type=memory
+tohdfs.channels.c2.capacity=1000
+tohdfs.channels.c2.transactionCapacity=100
+
+tohdfs.sinks.k2.type=hdfs
+tohdfs.sinks.k2.hdfs.path=hdfs://hnamenode:9000/flume/%Y%m%d/%H
+tohdfs.sinks.k2.hdfs.filePrefix=accesslog
+tohdfs.sinks.k2.hdfs.round=true
+tohdfs.sinks.k2.hdfs.roundValue=1
+tohdfs.sinks.k2.hdfs.roundUnit=hour
+tohdfs.sinks.k2.hdfs.useLocalTimeStamp=true
+tohdfs.sinks.k2.hdfs.batchSize=100
+tohdfs.sinks.k2.hdfs.fileType=DataStream
+tohdfs.sinks.k2.hdfs.writeFormat=Text
+#处理小文件
+tohdfs.sinks.k2.hdfs.rollInterval=600
+tohdfs.sinks.k2.hdfs.rollSize=128000000
+#文件与事件不相关
+tohdfs.sinks.k2.hdfs.rollCount=0
+#副本数量1
+tohdfs.sinks.k2.hdfs.minBlockReplicas=1
+
+tohdfs.sources.r2.channels=c2
+tohdfs.sinks.k2.channel=c2
+
+
+
+------------
+执行：
+./bin/flume-ng agent --name tohdfs --conf-file /opt/flume/apache-flume-1.9.0-bin/conf/flume-to-hdfs.properties -Dflume.root.logger=INFO,console
+
+
+=======================================
+文件系统上的Channel
+
+# cat flume-file-to-hdfs.properties
+
+
+filetohdfs.sources=r3
+filetohdfs.sinks=k3
+filetohdfs.channels=c3
+
+#可执行的命令行
+filetohdfs.sources.r3.type=spooldir
+filetohdfs.sources.r3.spoolDir=/var/log/messageDir
+filetohdfs.sources.r3.ignorePattern=^.*message$
+
+#文件，断点续传
+filetohdfs.channels.c3.type=file
+filetohdfs.channels.c3.checkpointDir=/opt/flume/apache-flume-1.9.0-bin/checkpoint
+filetohdfs.channels.c3.dataDirs=/opt/flume/apache-flume-1.9.0-bin/checkdata
+
+filetohdfs.sinks.k3.type=hdfs
+filetohdfs.sinks.k3.hdfs.path=hdfs://hnamenode:9000/flume/%Y%m%d/%H
+filetohdfs.sinks.k3.hdfs.filePrefix=message
+filetohdfs.sinks.k3.hdfs.round=true
+filetohdfs.sinks.k3.hdfs.roundValue=1
+filetohdfs.sinks.k3.hdfs.roundUnit=hour
+filetohdfs.sinks.k3.hdfs.useLocalTimeStamp=true
+filetohdfs.sinks.k3.hdfs.batchSize=100
+filetohdfs.sinks.k3.hdfs.fileType=DataStream
+filetohdfs.sinks.k3.hdfs.writeFormat=Text
+#处理小文件
+filetohdfs.sinks.k3.hdfs.rollInterval=600
+filetohdfs.sinks.k3.hdfs.rollSize=128000000
+#文件与事件不相关
+filetohdfs.sinks.k3.hdfs.rollCount=0
+#副本数量1
+filetohdfs.sinks.k3.hdfs.minBlockReplicas=1
+
+filetohdfs.sources.r3.channels=c3
+filetohdfs.sinks.k3.channel=c3
+
+
+------------
+执行：
+ ./bin/flume-ng agent --name filetohdfs --conf-file /opt/flume/apache-flume-1.9.0-bin/conf/flume-file-to-hdfs.properties -Dflume.root.logger=INFO,console
+   
+   
+   
+************OOZIE******************
+========================================
+安装：
+mkdir libext
+tar -zxvf oozie-hadooplibs-4.1.0-cdh5.9.3.tar.gz 
+cp oozie-4.1.0-cdh5.9.3/hadooplibs/hadooplib-2.6.0-cdh5.9.3.oozie-4.1.0-cdh5.9.3/* libext/
+cp /opt/software/ext-2.2.zip ./libext/
+cp /opt/software/mysql-connector-java-8.0.16.jar ./libext/
+# 注意libext下hadoop相关 jar 文件的版本，要与 hadoop保持一至！
+
+
+mysql> create database oozie;
+
+
+# cat oozie-site.xml
+
+<!-- my configuration -->
+    <property>
+        <name>oozie.service.JPAService.jdbc.driver</name>
+        <value>com.mysql.jdbc.Driver</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.url</name>
+        <value>jdbc:mysql://hnamenode:3306/oozie</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.username</name>
+        <value>root</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.password</name>
+        <value>birdhome</value>
+    </property>
+    <property>
+        <name>oozie.service.HadoopAccessorService.hadoop.configurations</name>
+        <value>*=/opt/hadoop/etc/hadoop</value>
+    </property>
+
+
+./bin/oozie-setup.sh sharelib \
+    create -fs hdfs://hnamenode:9000 \
+    -locallib oozie-sharelib-4.1.0-cdh5.9.3-yarn.tar.gz \
+    setting CATALINA_OPTS="$CATALINA_OPTS -Xmx1024m"
+
+----不用。
+./bin/oozie-setup.sh sharelib \
+    create -fs hdfs://hnamenode:9000 \
+    -locallib oozie-sharelib-4.1.0-cdh5.9.3.tar.gz \
+    setting CATALINA_OPTS="$CATALINA_OPTS -Xmx1024m"
+
+./bin/oozie-setup.sh db \
+    create -run \
+    -sqlfile oozie.sql \
+    setting CATALINA_OPTS="$CATALINA_OPTS -Xmx1024m"
+
+./bin/oozie-setup.sh prepare-war
+# 不同的HADOOP版本，要对 libext 中的hadoop文件作替换，再打包
+
+./bin/oozied.sh start
+
+#！！！！！好像不必要？
+# cat /opt/hadoop/etc/hadoop/yarn-site.xml
+	<property>
+		<name>yarn.resourcemanager.address</name>
+		<value>hnamenode:8032</value>
+	</property>
+
+
+/opt/hadoop/sbin/mr-jobhistory-daemon.sh start historyserver
+
+
+ 
+========================================
+配置任务
+解压 
+tar -zxvf oozie-examples.tar.gz
+cd examples
+mkdir oozie-apps
+cp apps/shell to examples/oozie-apps/shell
+配置任务：SHELL
+/opt/oozie-ok/oozie-4.1.0-cdh5.9.3/examples/oozie-apps/shell
+
+# hdfs dfs -put /opt/oozie-ok/oozie-4.1.0-cdh5.9.3/examples/ /user/root/
+hdfs dfs -put /opt/oozie-ok/oozie-4.1.0-cdh5.9.3/examples/ /user/oozie/
+hdfs dfs -put /opt/oozie-4.1.0-cdh5.9.3/examples/ /user/root/
+
+执行任务：
+./bin/oozie job --oozie http://hdatanode1:11000/oozie -config examples/oozie-apps/shell/job.properties -run
+/opt/oozie-4.1.0-cdh5.9.3/bin/oozie job --oozie http://hdatanode1:11000/oozie -config /opt/oozie-4.1.0-cdh5.9.3/examples/myapps/shell/job.properties -run
+/opt/oozie-4.1.0-cdh5.9.3/bin/oozie job --oozie http://hdatanode1:11000/oozie -config /opt/oozie-4.1.0-cdh5.9.3/examples/myapps/map-reduce/job.properties -run
+
+
+-------------------------------
+JA017: Could not lookup launched hadoop Job ID [job_local813765550_0001] 
+which was associated with  action [0000000-190723225206707-oozie-root-W@shell-node].  
+Failing this action!
+yarn.resourcemanager.address	
+
+参照该文档步骤解决
+https://blog.csdn.net/lucylove3943/article/details/80673962
+但具体是哪一步？未验证，mv冲突包？还是其它步骤？
+
+
+-------------------------------
+Container exited with a non-zero exit code 1. Error file: prelaunch.err.
+libext hadoop*文件版本 
+
+
+========================================
+定时任务
+修改时区
+date -R
+
+ln usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+oozie-site.xml
+    <property>
+        <name>oozie.processing.timezone</name>
+        <value>GMT+0800</value>
+    </property>
+
+oozie-console.js 
+return Ext.state.Manager.get("TimezoneId","GMT+0800");
+
+hdfs dfs -put /opt/oozie-4.1.0-cdh5.9.3/examples/ /user/root/
+
+/opt/oozie-4.1.0-cdh5.9.3/bin/oozie job --oozie http://hdatanode1:11000/oozie -config /opt/oozie-4.1.0-cdh5.9.3/examples/myapps/cron/job.properties -run
+
+# 杀死任务
+/opt/oozie-4.1.0-cdh5.9.3/bin/oozie job --oozie http://hdatanode1:11000/oozie -kill JOBID
+
+
+
+**************HUE*****************
+=================================
+安装依赖
+yum -y install ant asciidoc cyrus-sasl-devel cyrus-sasl-gssapi gcc gcc-c++ krb5-devel libtidy \
+libxml2-devel libxslt-devel openldap-devel python-devel sqlite-devel openssl-devel mysql-devel gmp-devel
+
+cd /opt/hue/hue-3.9.0-cdh5.9.3
+make apps/
+
+================================= 
+vim desktop/conf/hue.ini 
+
+
+=================================
+启动
+./build/env/bin/supervisor
+
+http://192.168.0.213:8888
+
+
+=================================
+配置
+
+--------------------------------
+与HADOOP集成
+$ tail -10 hdfs-site.xml 
+
+	<prpperty>
+		<name>dfs.webhdfs.enabled</name>
+		<value>true</value>
+	</property>
+	<property>
+		<name>dfs.permissions.enabled</name>
+		<value>false</value>
+	</property>
+
+    
+    
+[hadoop@hnamenode hadoop]$ tail -10 core-site.xml 
+	</property>
+        <property>
+                <name>hadoop.proxyuser.hue.hosts</name>
+		<value>*</value>
+	</property>
+	<property>
+		<name>hadoop.proxyuser.hue.groups</name>
+		<value>*</value>
+	</property>
+</configuration>
+
+
+
+vim hue/desktop/conf/hue.ini
+与hadoop 、 yarn_clusters 、 filebrowser相关的选项
+
+启动
+./build/env/bin/supervisor
+
+=================================
+与HIVE集成
+
+[root@hdatanode1 hive]# tail -n 10 hive-site.xml 
+  <property>
+	<name>hive.server2.thrift.port</name>
+	<value>10000</value>
+  </property>
+  <property>
+	<name>hive.server2.thrift.bind.host</name>
+	<value>hdatanode1</value>
+  </property>
+  <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://hdatanode1:9083</value>
+  </property>
+
+  <property>
+	<name>hive.server2.long.polling.timeout</name>
+	<value>5000ms</value>
+  </property>
+
+  
+--------------------------------  
+启动
+./bin/hive --service hiveserver2
+./bin/hive --service metastore
+
+--------------------------------
+vim hue/desktop/conf/hue.ini
+
+修改 beeswax、MSYQL 部分
+
+--------------------------------
+启动
+./build/env/bin/supervisor
+
+** HUE通常需要在 hue 用户下执行？root也可以
+
+--------------------------------
+hive database is locked
+https://www.cnblogs.com/sanduo1314/p/7428010.html
+options={"timeout": 30}
+
+好像带 count(*) 容易出现 locked
+
+
+
+=================================
+与 ZOOKEEPER 集成
+
+--------------------------------
+vim hue/desktop/conf/hue.ini
+
+修改 zookeeper 部分
+
+
+
+=================================
+与 OOZIE 集成
+
+
+oozie-site.xml
+
+    <property>
+        <name>oozie.processing.timezone</name>
+        <value>GMT+0800</value>
+    </property>
+
+    
+    <property>
+        <name>oozie.service.WorkflowAppService.system.libpath</name>
+        <value>hdfs://hnamenode:9000/user/root/share/lib/lib_20190724235501</value>
+    </property>
+
+--------------------------------
+vim hue/desktop/conf/hue.ini
+
+修改 liboozie oozie部分
+
+启动
+oozied.sh start
+ ./build/env/bin/supervisor
+ 
+--------------------------------
+The Oozie server is not running
+
+
+很多错误集：
+https://www.cnblogs.com/zlslch/p/6819622.html?utm_source=itdadao&utm_medium=referral
+
+
+
+
+***********KAFKA************************
+===============================
+安装
+JAVA、SCALA、ZK
+
+解压、ENV
+
+配置
+
+启动
+zookeeper:
+/opt/zookeeper/apache-zookeeper-3.5.5-bin/bin/zkServer.sh  start
+
+kafka:
+./bin/kafka-server-start.sh config/server.properties
+
+创建TOPIC
+./bin/kafka-topics.sh \
+    --create --zookeeper hnamenode:2181 \
+    --replication-factor 1 \
+    --partitions 1 --topic \
+    MYFIRSTTOPIC
+
+    
+./bin/kafka-topics.sh \
+    --create --zookeeper hnamenode:2181 \
+    --replication-factor 2 \
+    --partitions 3 --topic \
+    MYFIRSTTOPIC
+
+    
+查看TOPIC
+./bin/kafka-topics.sh --list --zookeeper hnamenode:2181
+
+
+删除TOPIC
+./bin/kafka-topics.sh --delete --zookeeper hnamenode:2181 --topic MYFIRSTTOPIC
+
+
+启动生产者
+./bin/kafka-console-producer.sh --broker-list hdatanode2:9092 --topic MYFIRSTTOPIC
+
+
+启动消费者:旧命令/新命令
+./bin/kafka-console-consumer.sh \
+    --zookeeper hnamenode:2181 \
+    --from-beginning \
+    --topic MYFIRSTTOPIC
+    
+./bin/kafka-console-consumer.sh \
+    --bootstrap-server hdatanode2:9092 \
+    --consumer-property \
+    group.id=test-consumer-group \
+    --consumer-property \
+    client.id=new-consumer-cl \
+    --topic MYFIRSTTOPIC
+
+
+===============================
+与FLUME整合
+启动FLMUE
+./bin/flume-ng agent --conf FLUME-TO-KAKFA --name tokafka --conf-file /opt/flume/apache-flume-1.9.0-bin/conf/flume-to-kafka.properties
+
+
+
+
+
+***********HBASE************************
+===============================
+安装
+解压、ENV
+
+[root@hnamenode conf]# cat hbase-env.sh | grep -Ev '^#|^$'
+export JAVA_HOME=/usr/local/java/jdk1.8.0_212
+export HBASE_OPTS="$HBASE_OPTS -XX:+UseConcMarkSweepGC"
+export HBASE_MANAGES_ZK=false
+
+
+[root@hnamenode conf]# cat hbase-site.xml | grep -Ev '^#|^$'
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://hnamenode:9000/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorun</name>
+        <value>hnamenode</value>
+    </property>
+    <property>
+        <name>hbase.unsafe.stream.capability.enforce</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.codecs</name>
+        <value>snappy</value>
+    </property>
+</configuration>
+
+
+
+[root@hnamenode conf]# cat regionservers 
+hdatanode1
+hdatanode2
+hdatanode3
+
+
+替换 lib/hadoop*
+替换 lib/zookeeper*
+
+
+启动
+zookeeper:
+/opt/zookeeper/apache-zookeeper-3.5.5-bin/bin/zkServer.sh  start
+
+启动
+./bin/hbase-daemon.sh start master
+./bin/hbase-daemon.sh start regionserver
+
+启动HBASE
+./bin/start-hbase.sh
+
+---------------------
+hbase.wal.dir' points to a FileSystem mount that can provide it
+
+HMASTER一会儿就死掉
+
+
+------------------------
+SPARK-APP中报错: 
+DoNotRetryIOException: Compression algorithm 'snappy' previously failed test
+
+hbad-site.xml
+<property>  
+<name>hbase.regionserver.codecs</name>  
+<value>snappy</value>  
+</property>  
+-------------------------
+
+
+########################
+./bin/hbase shell
+
+----------------------------
+hbase(main):005:0* create 'firstOnHbase', 'info'
+Created table firstOnHbase
+=> Hbase::Table - firstOnHbase
+hbase(main):006:0> 
+hbase(main):007:0* list
+TABLE                                                                                                                       
+firstOnHbase                                                                                                                
+=> ["firstOnHbase"]
+
+hbase(main):009:0> describe 'firstOnHbase'
+Table firstOnHbase is ENABLED                                                                                               
+firstOnHbase                                                                                                                
+COLUMN FAMILIES DESCRIPTION                                                                                                 
+{NAME => 'info', VERSIONS => '1', EVICT_BLOCKS_ON_CLOSE => 'false', NEW_VERSION_BEHAVIOR => 'false', KEEP_DELETED_CELLS => '
+FALSE', CACHE_DATA_ON_WRITE => 'false', DATA_BLOCK_ENCODING => 'NONE', TTL => 'FOREVER', MIN_VERSIONS => '0', REPLICATION_SC
+OPE => '0', BLOOMFILTER => 'ROW', CACHE_INDEX_ON_WRITE => 'false', IN_MEMORY => 'false', CACHE_BLOOMS_ON_WRITE => 'false', P
+REFETCH_BLOCKS_ON_OPEN => 'false', COMPRESSION => 'NONE', BLOCKCACHE => 'true', BLOCKSIZE => '65536'}                       
+
+
+hbase(main):010:0> 
+hbase(main):011:0* put 'firstOnHbase', '10010', 'info:name', 'xieyie'
+hbase(main):012:0> put 'firstOnHbase', '10010', 'info:name', 'xieyie'
+hbase(main):013:0> put 'firstOnHbase', '10010', 'info:age', '18'
+hbase(main):014:0> put 'firstOnHbase', '10010', 'info:sex', 'male'
+
+hbase(main):018:0* get 'firstOnHbase', '10010'
+COLUMN                           CELL                                                                                       
+ info:age                        timestamp=1564324294615, value=18                                                          
+ info:name                       timestamp=1564324279310, value=xieyie                                                      
+ info:sex                        timestamp=1564324309335, value=male                                                        
+
+
+hbase(main):023:0* put 'firstOnHbase', '10010', 'info:name', 'xieyie2'
+Took 0.0155 seconds                                                                                                         
+hbase(main):024:0> 
+hbase(main):025:0* get 'firstOnHbase', '10010', 'info'
+COLUMN                           CELL                                                                                       
+ info:age                        timestamp=1564324294615, value=18                                                          
+ info:name                       timestamp=1564324630102, value=xieyie2                                                     
+ info:sex                        timestamp=1564324309335, value=male                                                        
+
+ 
+hbase(main):005:0* get 'firstOnHbase', '10010', 'info:name'
+COLUMN                           CELL                                                                                       
+ info:name                       timestamp=1564324630102, value=xieyie2   
+
+
+hbase(main):007:0* scan 'firstOnHbase'
+ROW                              COLUMN+CELL                                                                                
+ 10010                           column=info:age, timestamp=1564324294615, value=18                                         
+ 10010                           column=info:name, timestamp=1564324630102, value=xieyie2                                   
+ 10010                           column=info:qq, timestamp=1564324955733, value=968711                                      
+ 10010                           column=info:sex, timestamp=1564324309335, value=male    
+
+
+hbase(main):013:0> scan 'firstOnHbase', {COLUMNS => ['info:name', 'info:age']}
+ROW                              COLUMN+CELL                                                                                
+ 10010                           column=info:age, timestamp=1564324294615, value=18                                         
+ 10010                           column=info:name, timestamp=1564324630102, value=xieyie2                                   
+
+hbase(main):014:0> scan 'firstOnHbase', {COLUMNS => ['info']}
+ROW                              COLUMN+CELL                                                                                
+ 10010                           column=info:age, timestamp=1564324294615, value=18                                         
+ 10010                           column=info:name, timestamp=1564324630102, value=xieyie2                                   
+ 10010                           column=info:qq, timestamp=1564324955733, value=968711                                      
+ 10010                           column=info:sex, timestamp=1564324309335, value=male                                       
+
+
+hbase(main):019:0> scan 'firstOnHbase', {STARTROW => '10010', STOPROW => '11000'}
+ROW                              COLUMN+CELL                                                                                
+ 10010                           column=info:age, timestamp=1564324294615, value=18                                         
+ 10010                           column=info:name, timestamp=1564324630102, value=xieyie2                                   
+ 10010                           column=info:qq, timestamp=1564324955733, value=968711                                      
+ 10010                           column=info:sex, timestamp=1564324309335, value=male                                       
+
+
+--------------------------
+禁用表 
+hbase(main):068:0* disable 'secondTable'
+Took 0.9056 seconds                                                                                                         
+hbase(main):069:0> get 'secondTable', '10'
+COLUMN                           CELL                                                                                       
+
+ERROR: Table secondTable is disabled!
+ 
+--------------------------
+删除表
+hbase(main):071:0> drop 'secondTable'
+Took 0.5449 seconds                                                                                                         
+hbase(main):072:0> 
+
+--------------------------
+清空表
+truncate 'secondTable'
+
+--------------------------
+hbase(main):076:0* count 'firstOnHbase'
+1 row(s)
+=> 1
+
+hbase(main):085:0> scan 'firstOnHbase', LIMIT => 1
+ROW                              COLUMN+CELL                                                                                
+ 10010                           column=info:age, timestamp=1564324294615, value=18                                         
+ 10010                           column=info:name, timestamp=1564324630102, value=xieyie2                                   
+ 10010                           column=info:qq, timestamp=1564324955733, value=968711                                      
+ 10010                           column=info:sex, timestamp=1564324309335, value=male                                       
+
+
+hbase(main):011:0> scan 'hbase:meta'
+ROW                        COLUMN+CELL                                                                 
+ firstOnHbase              column=table:state, timestamp=1564323962405, value=\x08\x00                 
+ firstOnHbase,,15643239612 column=info:regioninfo, timestamp=1564369009344, value={ENCODED => ed5b1e993
+ 52.ed5b1e993dc5f49689e630 dc5f49689e63044dc8dd7c0, NAME => 'firstOnHbase,,1564323961252.ed5b1e993dc5f4
+ 44dc8dd7c0.               9689e63044dc8dd7c0.', STARTKEY => '', ENDKEY => ''}                         
+ firstOnHbase,,15643239612 column=info:seqnumDuringOpen, timestamp=1564369009344, value=\x00\x00\x00\x0
+ 52.ed5b1e993dc5f49689e630 0\x00\x00\x00\x0B                                                           
+ 44dc8dd7c0.                                                                                           
+ firstOnHbase,,15643239612 column=info:server, timestamp=1564369009344, value=hnamenode:16020          
+ 52.ed5b1e993dc5f49689e630                                                                             
+ 44dc8dd7c0.                                                                                           
+ firstOnHbase,,15643239612 column=info:serverstartcode, timestamp=1564369009344, value=1564368988677   
+ 52.ed5b1e993dc5f49689e630                                                                             
+ 44dc8dd7c0.                                                                                           
+ firstOnHbase,,15643239612 column=info:sn, timestamp=1564369008301, value=hnamenode,16020,1564368988677
+ 52.ed5b1e993dc5f49689e630                                                                             
+ 44dc8dd7c0.                                                                                           
+ firstOnHbase,,15643239612 column=info:state, timestamp=1564369009344, value=OPEN                      
+ 52.ed5b1e993dc5f49689e630                                                                             
+ 44dc8dd7c0.                                                                                           
+ hbase:namespace           column=table:state, timestamp=1564323895601, value=\x08\x00                 
+ hbase:namespace,,15643238 column=info:regioninfo, timestamp=1564369009156, value={ENCODED => 66250443e
+ 93724.66250443e7a14d058b5 7a14d058b577af25f3b994e, NAME => 'hbase:namespace,,1564323893724.66250443e7a
+ 77af25f3b994e.            14d058b577af25f3b994e.', STARTKEY => '', ENDKEY => ''}                      
+ hbase:namespace,,15643238 column=info:seqnumDuringOpen, timestamp=1564369009156, value=\x00\x00\x00\x0
+ 93724.66250443e7a14d058b5 0\x00\x00\x00\x07                                                           
+ 77af25f3b994e.                                                                                        
+ hbase:namespace,,15643238 column=info:server, timestamp=1564369009156, value=hnamenode:16020          
+ 93724.66250443e7a14d058b5                                                                             
+ 77af25f3b994e.                                                                                        
+ hbase:namespace,,15643238 column=info:serverstartcode, timestamp=1564369009156, value=1564368988677   
+ 93724.66250443e7a14d058b5                                                                             
+ 77af25f3b994e.                                                                                        
+ hbase:namespace,,15643238 column=info:sn, timestamp=1564369008301, value=hnamenode,16020,1564368988677
+ 93724.66250443e7a14d058b5                                                                             
+ 77af25f3b994e.                                                                                        
+ hbase:namespace,,15643238 column=info:state, timestamp=1564369009156, value=OPEN                      
+ 93724.66250443e7a14d058b5                                                                             
+ 77af25f3b994e.     
+ 
+ 
+hbase(main):012:0> scan 'hbase:namespace'
+ROW                        COLUMN+CELL                                                                 
+ default                   column=info:d, timestamp=1564323895893, value=\x0A\x07default               
+ hbase                     column=info:d, timestamp=1564323896068, value=\x0A\x05hbase                 
+
+
+===============================
+数据迁移
+
+------------------------------
+HBASE集成MAPREDUCE 
+新版中没有这个文件？
+hbase-server-x.y.z-hadoop2.jar
+
+------------------------------
+查看需要的依赖
+./bin/hbase mapredcp
+[root@hnamenode hbase-2.2.0]# ./bin/hbase mapredcp
+/opt/hbase/hbase-2.2.0/bin/../lib/shaded-clients/hbase-shaded-mapreduce-2.2.0.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/audience-annotations-0.5.0.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/commons-logging-1.2.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/findbugs-annotations-1.3.9-1.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/htrace-core4-4.2.0-incubating.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/log4j-1.2.17.jar
+:/opt/hbase/hbase-2.2.0/bin/../lib/client-facing-thirdparty/slf4j-api-1.7.25.jar
+
+
+[root@hnamenode hbase-2.2.0]# echo $HBASE_HOME
+/opt/hbase/hbase-2.2.0
+[root@hnamenode hbase-2.2.0]# echo $HADOOP_HOME
+/opt/hadoop
+
+在提交命令的机器上设置
+[root@hnamenode hbase-2.2.0]# echo $HADOOP_CLASSPATH
+:/opt/hbase/hbase-2.2.0/lib/shaded-clients/hbase-shaded-mapreduce-2.2.0.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/audience-annotations-0.5.0.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/commons-logging-1.2.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/findbugs-annotations-1.3.9-1.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/htrace-core4-4.2.0-incubating.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/log4j-1.2.17.jar:/opt/hbase/hbase-2.2.0/lib/client-facing-thirdparty/slf4j-api-1.7.25.jar
+
+
+------------------------------
+启动HDFS与YARN、历史服务器
+./sbin/start-dfs.sh
+./sbin/start-yarn.sh
+./sbin/mr-jobhistory-daemon.sh start historyserver
+/opt/zookeeper/apache-zookeeper-3.5.5-bin/bin/zkServer.sh  start
+./bin/hbase-daemon.sh start master
+./bin/hbase-daemon.sh start regionserver
+./bin/start-hbase.sh
+
+
+------------------------------
+使用函数
+统计表/行
+自己写JAR包?:hbase-server-0.98.6-hadoop2.jar这个文件不存在
+${HADOOP_HOME}/bin/yarn jar ${HBASE_HOME}/lib/hbase-server-2.2.0.jar rowcounter firstOnHbase
+或
+[root@hnamenode hbase-2.2.0]# ./bin/hbase org.apache.hadoop.hbase.mapreduce.RowCounter firstOnHbase
+或:已验证，OK
+[root@hnamenode lib]# ${HADOOP_HOME}/bin/hadoop jar ${HBASE_HOME}/lib/hbase-mapreduce-2.2.0.jar
+An example program must be given as the first argument.
+Valid program names are:
+  CellCounter: Count cells in HBase table.
+  WALPlayer: Replay WAL files.
+  completebulkload: Complete a bulk data load.
+  copytable: Export a table from local cluster to peer cluster.
+  export: Write table data to HDFS.
+  exportsnapshot: Export the specific snapshot to a given FileSystem.
+  import: Import data written by Export.
+  importtsv: Import data in TSV format.
+  rowcounter: Count rows in HBase table.
+  verifyrep: Compare data from tables in two different clusters. It doesn't work for incrementColumnValues'd cells since timestamp is changed after appending to WAL.
+[root@hnamenode lib]# 
+
+参考： org.apache.hadoop.hbase.mapreduce.importtsv
+------------------------------
+创建测试文件
+并上传到HDFS中
+hdfs dfs -put table_for_hbase.tsv /usr/root/hbase/importtsv
+
+------------------------------
+创建新表
+create 'student', 'info'
+
+------------------------------
+执行MapReduce导入数据到HBASE表
+${HADOOP_HOME}/bin/yarn jar ${HBASE_HOME}/lib/hbase-server-2.2.0.jar \
+    importtsv \
+    -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:sex \
+    student \
+    http://hnamenode:9000/user/root/hbase/importtsv
+或
+bin/hbase org.apache.hadoop.hbase.mapreduce.ImportTsv \
+    -Dimporttsv.separator="\t" \
+    -Dmapreduce.map.speculative=false \
+    -Dmapreduce.reduce.speculative=false \
+    -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:sex \
+    student \
+    hdfs://hnamenode:9000/user/root/hbase/importtsv/table_for_hbase.tsv
+或
+bin/hbase org.apache.hadoop.hbase.mapreduce.ImportTsv \
+    -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:sex \
+    student \
+    hdfs://hnamenode:9000/user/root/hbase/importtsv/table_for_hbase.tsv
+
+------------------------------
+使用BulkLoad导入HFile数据
+巨量数据更快速
+tsv->hfile：自动创建表
+bin/hbase org.apache.hadoop.hbase.mapreduce.ImportTsv \
+    -Dimporttsv.bulk.output=/user/root/hbase/hfile \
+    -Dimporttsv.columns=HBASE_ROW_KEY,info:name,info:age,info:sex \
+    student3 \
+    hdfs://hnamenode:9000/user/root/hbase/importtsv/table_for_hbase.tsv
+
+使用命令将HFile文件导入HBase
+??也可以是上面的YARN执行，反正都不成功。原因无下面的jar包
+hadoop jar lib/hbase-server-0.98.9-hadoop2.jar completebulkload /user/root/hbase/hfile student
+？？
+hadoop jar lib/hbase-server-2.2.0.jar completebulkload /user/root/hbase/hfile student
+###据说这步会自动创建该表
+# 使用bulkload方式导入数据
+# 成功
+./bin/hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles /user/root/hbase/hfile student3
+
+
+------------------------------
+API的方式转数据
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FsShell;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat2;
+import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+ 
+import java.io.IOException;
+ 
+public class BulkLoadJob {
+    static Logger logger = LoggerFactory.getLogger(BulkLoadJob.class);
+ 
+    public static class BulkLoadMap extends Mapper<LongWritable, Text, ImmutableBytesWritable, KeyValue> {
+ 
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+ 
+            String[] valueStrSplit = value.toString().split("\t");
+            String hkey = valueStrSplit[0];
+            String family = valueStrSplit[1].split(":")[0];
+            String column = valueStrSplit[1].split(":")[1];
+            String hvalue = valueStrSplit[2];
+            final byte[] rowKey = Bytes.toBytes(hkey);
+            final ImmutableBytesWritable HKey = new ImmutableBytesWritable(rowKey);
+            // Put HPut = new Put(rowKey);
+            // byte[] cell = Bytes.toBytes(hvalue);
+            // HPut.add(Bytes.toBytes(family), Bytes.toBytes(column), cell);
+            KeyValue kv = new KeyValue(rowKey, Bytes.toBytes(family), Bytes.toBytes(column), Bytes.toBytes(hvalue));
+            context.write(HKey, kv);
+        }
+    }
+ 
+    public static void main(String[] args) throws Exception {
+        Configuration conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.property.clientPort", "2182");
+        conf.set("hbase.zookeeper.quorum", "msg801,msg802,msg803");
+        conf.set("hbase.master", "msg801:60000");
+        String[] dfsArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+        String inputPath = dfsArgs[0];
+        System.out.println("source: " + dfsArgs[0]);
+        String outputPath = dfsArgs[1];
+        System.out.println("dest: " + dfsArgs[1]);
+        HTable hTable = null;
+        try {
+            Job job = Job.getInstance(conf, "Test Import HFile & Bulkload");
+            job.setJarByClass(BulkLoadJob.class);
+            job.setMapperClass(BulkLoadJob.BulkLoadMap.class);
+            job.setMapOutputKeyClass(ImmutableBytesWritable.class);
+            job.setMapOutputValueClass(KeyValue.class);
+            // speculation
+            job.setSpeculativeExecution(false);
+            job.setReduceSpeculativeExecution(false);
+            // in/out format
+            job.setInputFormatClass(TextInputFormat.class);
+            job.setOutputFormatClass(HFileOutputFormat2.class);
+ 
+            FileInputFormat.setInputPaths(job, inputPath);
+            FileOutputFormat.setOutputPath(job, new Path(outputPath));
+ 
+            hTable = new HTable(conf, dfsArgs[2]);
+            HFileOutputFormat2.configureIncrementalLoad(job, hTable);
+ 
+            if (job.waitForCompletion(true)) {
+                FsShell shell = new FsShell(conf);
+                try {
+                    shell.run(new String[] { "-chmod", "-R", "777", dfsArgs[1] });
+                } catch (Exception e) {
+                    logger.error("Couldnt change the file permissions ", e);
+                    throw new IOException(e);
+                }
+                // 加载到hbase表
+                LoadIncrementalHFiles loader = new LoadIncrementalHFiles(conf);
+                // 两种方式都可以
+                // 方式一
+                String[] loadArgs = { outputPath, dfsArgs[2] };
+                loader.run(loadArgs);
+                // 方式二
+                // loader.doBulkLoad(new Path(outputPath), hTable);
+            } else {
+                logger.error("loading failed.");
+                System.exit(1);
+            }
+ 
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } finally {
+            if (hTable != null) {
+                hTable.close();
+            }
+        }
+    }
+}
+
+
+===============================
+ 
+HBASE与HIVE集成: HIVE中的表数据读写自动同步到HBASE
+------------------------------
+配置JAR包
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-server-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-client-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-protocol-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-it-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-hadoop-compat-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode1 opt]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-hadoop2-compat-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+
+------------------------------
+配置hive-site.xml
+  <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>hnamenode</value>
+  </property>
+
+------------------------------
+HIVE中创建表，并映射到HBase中的表
+启动metastore服务
+    ./bin/hive --service metastore &
+启动zookeeper
+启动HDFS\HBASE
+
+创建表：HIVE中
+    CREATE TABLE IF NOT EXISTS HiveOnHdfs.student_with_hbase(
+    id int,
+    name string,
+    age int,
+    sex string
+    ) COMMENT "与HBASE关联的学生表"
+    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    WITH SERDEPROPERTIES ('hbase.columns.mapping'=':key,info:name,info:age,info:sex')   --columns顺序要一至两边
+    TBLPROPERTIES ('hbase.table.name'='student_from_hive')                              --可以不设置
+    ;
+
+--此时，
+hbase(main):011:0> list                                                                                                                            
+=> ["NewTable", "firstOnHbase", "student", "student2", "student3", "student_from_hive"]
+
+------------------------------
+从HIVE中插入数据
+hive> load data local inpath "/opt/hive/table_student.txt" into table HiveOnHdfs.student_with_hbase;
+A non-native table cannot be used as target for LOAD
+
+XXXX:
+hive> insert into table HiveOnHdfs.student_with_hbase (id, name, age, sex) values (333, 'shellmount', 111, 'nan');
+YYYY:字段有讲究。
+hive> insert into table HiveOnHdfs.student_with_hbase (id, name, age, sex) values ('3331', 'shellmount', 111, 'nan');
+
+--此时，
+hbase(main):015:0> scan 'student_from_hive'
+ROW                                   COLUMN+CELL                                                                                                
+ 333                                  column=info:age, timestamp=1564478418597, value=111                                                        
+ 333                                  column=info:name, timestamp=1564478418597, value=shellmount                                                
+ 333                                  column=info:sex, timestamp=1564478418597, value=nan                                                        
+1 row(s)
+Took 0.0353 seconds    
+
+------------------------------
+HIVE中删除表 drop table student_with_hbase
+此时，HBASE中也会同时被删除
+
+
+
+===============================
+HBASE关联HIVE：HIVE中加载一张HBASE的表
+------------------------------
+创建表：HIVE中
+    CREATE TABLE IF NOT EXISTS HiveOnHdfs.student_with_hbase(
+    id int,
+    name string,
+    age int,
+    sex string
+    ) COMMENT "与HBASE关联的学生表"
+    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    WITH SERDEPROPERTIES ('hbase.columns.mapping'=':key,info:name,info:age,info:sex')   --columns顺序要一至两边
+    TBLPROPERTIES ('hbase.table.name'='student_from_hive')                              --可以不设置
+    ;
+
+hive> insert into table HiveOnHdfs.student_with_hbase (id, name, age, sex) values ('3331', 'shellmount', 111, 'nan');
+
+------------------------------
+创建外部表：HIVE中
+    CREATE EXTERNAL TABLE IF NOT EXISTS HiveOnHdfs.student_ext_from_hbase(
+    id int,
+    name string,
+    age int,
+    sex string
+    ) COMMENT "与HBASE关联的学生表,来自HBASE的文件，外部表"
+    STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    WITH SERDEPROPERTIES ('hbase.columns.mapping'=':key,info:name,info:age,info:sex')   --columns顺序要一至两边
+    TBLPROPERTIES ('hbase.table.name'='student_from_hive')  --student_from_hive，其实是HBASE原生的表，仅名称叫这个                             --可以不设置
+    ;
+
+hive> 
+    > 
+    > select * from student_ext_from_hbase;
+
+------------------------------
+外部表的删除，不会影响HBASE原表的删除
+
+------------------------------
+如此，将清洗好的数据，以文件的方式（如HFILE/CSV），存储入HBASE，
+并可在HIVE中使用与分析
+
+
+===============================
+HBASE与SQOOP整合
+
+------------------------------
+将MYSQL导入到HBASE中: false。
+
+[root@hdatanode2 sqoop-1.4.7.bin__hadoop-2.6.0]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-server-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode2 sqoop-1.4.7.bin__hadoop-2.6.0]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-protocol-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode2 sqoop-1.4.7.bin__hadoop-2.6.0]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-it-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode2 sqoop-1.4.7.bin__hadoop-2.6.0]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-hadoop-compat-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+[root@hdatanode2 sqoop-1.4.7.bin__hadoop-2.6.0]# ln -s /opt/hbase/hbase-2.2.0/lib/hbase-hadoop2-compat-2.2.0.jar /opt/hive/apache-hive-3.1.1-bin/lib 
+
+
+./bin/sqoop import \
+--connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+--username root \
+--password birdhome \
+--table mysql_to_hdfs \
+--columns "id, name" \
+--column-family "info" \
+--hbase-create-table \
+--hbase-table "mysql_to_hbase" \
+--hbase-row-key "id" \
+--num-mappers 1 \
+--split-by "id" \
+--bindir ./ 
+
+NoSuchMethodError: org.apache.hadoop.hbase.client.HBaseAdmin.<init>(Lorg/apache/hadoop/conf/Configuration;)
+??? May the version of the SQOOP is not Ok for HBASE2.2
+
+sqoop import \
+--connect jdbc:mysql://hnamenode:3306/sqoop_to_hdfs \
+--driver com.mysql.jdbc.Driver \
+--username root \
+--password birdhome \
+--table mysql_to_hdfs \
+--hbase-table student2 \
+--hbase-row-key id \
+--column-family info \
+--split-by id -m 8
+
+
+===============================
+HBASE ON HUE
+
+------------------------------
+vim desktop/conf/hue.ini
+
+start thrift:
+[root@hnamenode hbase-2.2.0]# ./bin/hbase-daemon.sh start thrift
+
+start hue:
+[root@hdatanode2 hue-3.9.0-cdh5.9.3]# ./build/env/bin/supervisor 
+
+web-access:
+http://192.168.0.213:8888/
+
+
+===============================
+HBASE COMMAND
+
+./bin/hbase shell
+
+help 'create'
+
+===============================
+HBASE PRE SPLITS
+
+create 'namespace:table1', 'info', SPLITS => ['10', '20', '30', '40']
+
+create 'namespace:table2', 'info', SPLITS_FILE => 'splits.txt', OWNER => 'ShellMount'
+cat splits.txt
+201901
+201902
+201903
+201904
+201905
+201906
+201907
+201908
+201909
+201910
+201911
+201912
+
+===============================
+HBASE - SCAN
+
+scan 'student', {LIMIT => 3}
+
+scan 'student', {COLUMNS => 'info:name'}
+
+scan 'student', {COLUMNS => [STARTROW => '3']}
+
+scan 'firstOnHbase', {STARTROW => '10010', STOPROW => '11000'}
+
+scan 'firstOnHbase', {STARTROW => 'rowkey8*', STOPROW => 'rowkey9*'}
+
+scan 'firstOnHbase', {STARTROW => '108*', STOPROW => '109*', LIMIT => 10}
+
+scan 'student', FILTER=>"ValueFilter(=,'binary:birdhome')"
+
+scan 'student', FILTER=>"ValueFilter(=,'substring:rdho')"
+
+scan 'student', FILTER=> "ColumnPrefixFilter('name') AND ValueFilter(=,'substring:rdho')"
+
+scan 'student', FILTER=> "ColumnPrefixFilter('name') AND (ValueFilter(=,'substring:rdho') OR ValueFilter(=,'substring:xie'))"
+
+scan 'firstOnHbase', FILTER=>"PrefixFilter('1089')"
+
+count 'firstOnHbase', FILTER=>"PrefixFilter('1089')"
+
+get 'firstOnHbase', '10896', FILTER=>"ValueFilter(=,'substring:Shan')"
+
+get_counter 'default:student', '2', 'info:name'
+
+
+
+**************
+项目：通话记录相关的计算
+**************
+
+数据
+===============================
+rowkey                      area    action  phone   
+18550335055_20151001082013  上海  主叫  13993111291
+18550335055_20151001082014  上海  主叫  18550115011 
+18550335055_20151001082015  上海  被叫  13443112111
+18550335056_20151011082113  深圳  被叫  18629134213
+18550335056_20151012082215  深圳  主叫  18521599521
+18550335056_20151101080017  深圳  被叫  13777141477
+18550335057_20151103084013  北京  主叫  13013011301
+18550335057_20151211082111  北京  主叫  13113111291
+18550335057_20151221182210  北京  被叫  15671591921
+
+创建表与数据
+===============================
+create_namespace 'mobile'
+create 'mobile:userTelphone', 'record'
+list_namespace_tables 'mobile'
+
+
+put 'mobile:userTelphone', '18550335055_20151001082013', 'record:area', '上海'
+put 'mobile:userTelphone', '18550335055_20151001082013', 'record:active', '主叫'
+put 'mobile:userTelphone', '18550335055_20151001082013', 'record:phone', '13993111291'
+
+put 'mobile:userTelphone', '18550335055_20151001082014', 'record:area', '上海'
+put 'mobile:userTelphone', '18550335055_20151001082014', 'record:active', '主叫'
+put 'mobile:userTelphone', '18550335055_20151001082014', 'record:phone', '18550115011'
+
+put 'mobile:userTelphone', '18550335055_20151001082015', 'record:area', '上海'
+put 'mobile:userTelphone', '18550335055_20151001082015', 'record:active', '被叫'
+put 'mobile:userTelphone', '18550335055_20151001082015', 'record:phone', '13443112111'
+
+put 'mobile:userTelphone', '18550335056_20151011082113', 'record:area', '深圳'
+put 'mobile:userTelphone', '18550335056_20151011082113', 'record:active', '被叫'
+put 'mobile:userTelphone', '18550335056_20151011082113', 'record:phone', '18629134213'
+
+put 'mobile:userTelphone', '18550335056_20151012082215', 'record:area', '深圳'
+put 'mobile:userTelphone', '18550335056_20151012082215', 'record:active', '主叫'
+put 'mobile:userTelphone', '18550335056_20151012082215', 'record:phone', '18521599521'
+
+put 'mobile:userTelphone', '18550335056_20151101080017', 'record:area', '深圳'
+put 'mobile:userTelphone', '18550335056_20151101080017', 'record:active', '被叫'
+put 'mobile:userTelphone', '18550335056_20151101080017', 'record:phone', '13777141477'
+
+
+put 'mobile:userTelphone', '18550335057_20151103084013', 'record:area', '北京'
+put 'mobile:userTelphone', '18550335057_20151103084013', 'record:active', '主叫'
+put 'mobile:userTelphone', '18550335057_20151103084013', 'record:phone', '13013011301'
+
+put 'mobile:userTelphone', '18550335057_20151211082111', 'record:area', '北京'
+put 'mobile:userTelphone', '18550335057_20151211082111', 'record:active', '主叫'
+put 'mobile:userTelphone', '18550335057_20151211082111', 'record:phone', '13113111291'
+
+put 'mobile:userTelphone', '18550335057_20151221182210', 'record:area', '北京'
+put 'mobile:userTelphone', '18550335057_20151221182210', 'record:active', '被叫'
+put 'mobile:userTelphone', '18550335057_20151221182210', 'record:phone', '15671591921'
+
+===============================
+查看数据
+scan 'mobile:userTelphone'
+
+----------------------------
+查 18550335057 在 12月 的通话次数
+scan 'mobile:userTelphone', {STARTROW=>'18550335057_201512*', STOPROW=>'18550335057_201601*'}
+
+count 'mobile:userTelphone', {STARTROW=>'18550335057_201512*', STOPROW=>'18550335057_201601*'}
+
+----------------------------
+查 18550335057 主被叫次数
+scan 'mobile:userTelphone', {STARTROW=>'18550335057*', FILTER=>"ValueFilter(=,'binary:被叫')"}
+
+
+===============================
+计算 所有ID 主被叫次数
+这个就搞不定了：
+scan 'mobile:userTelphone', {STARTROW=>'18550335057*', FILTER=>"ValueFilter(=,'binary:被叫')"}
+
+使用 HIVE 进行操作
+创建 HIVE 表
+----------------------------
+CREATE TABLE userTelphoneRecord(
+telephone           string,
+teletimelong        int,
+teletimes           int,
+area                string,
+active              string,
+remote_phone        int
+} row format delimited fields terminated by '\t';
+
+映射表
+----------------------------
+CREATE EXTERNAL userTelphone_ext_in_hbase(
+telenum_time    string,
+area            string,
+active          string,
+remote_phone    int
+} STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ('hbase.columns.mapping'=':key, record:area, record:active, record:phone')
+TBLPROPERTIES ('mobile:userTelphone');
+
+
+SQL计算
+----------------------------
+select unix_timestamp('2015-12-11 08:21:11')-unix_timestamp('2015-12-11 08:00:11')
+select from_unixtime(1505456567, 'yyyy-MM-dd HH:mm:SS')
+
+
+分析结果存储到MSYQL
+----------------------------
+SQOOP导出数据
+
+
+===============================
+还可以使用 phoenix 框架作为 HBASE 的客户端开发框架
+
+
+
+*************REDIS********************
+make
+./redis-server /path/to/redis.conf
+
+vim redis.conf
+bind hnamenode
+daemonize yes
+logfile "redis.log"
+
+[root@hnamenode redis-3.2.13]# ./src/redis-server redis.conf 
+redis-cli -h hnamenode 
+
+
+开发客户端： jedis
+
+
+
+
+**************** AQ *****************
+saveAsNewAPIHadoopFile未解之迷
+
+https://blog.csdn.net/genghaihua/article/details/49613803/
+
+https://blog.csdn.net/leen0304/article/details/78854530
+
+http://f.dataguru.cn/spark-642399-1-1.html
+
+http://lxw1234.com/archives/2015/07/406.htm
+
+https://www.cnblogs.com/tonglin0325/p/6682367.html
+
+
+------------------------------------------
+2019-08-05 12:31:37,514 ERROR tool.LoadIncrementalHFiles: Unexpected execution exception during splitting
+java.util.concurrent.ExecutionException: java.lang.UnsatisfiedLinkError: org.apache.hadoop.util.NativeCodeLoader.buildSupportsSnappy()Z
+
+spark.executor.extraLibraryPath             -Djava.library.path=/opt/hadoop/hadoop-3.1.2/lib/native
+spark.yarn.cluster.driver.extraLibraryPath  -Djava.library.path=/opt/hadoop/hadoop-3.1.2/lib/native
+spark.driver.extraLibraryPath               -Djava.library.path=/opt/hadoop/hadoop-3.1.2/lib/native
+
+最终找到了解决办法，在$HBASE_HOME/lib/native中创建软链接
+ln -s /home/hadoop/application/hadoop/lib/native Linux-amd64-64
+
+并且注意环境变量中添加
+export HBASE_LIBRARY_PATH=/home/hadoop/application/hbase/lib/native/Linux-amd64-64
+
+OR
+关闭SNAPPY
+
+-------------------------------------------
+
+2019-08-06 14:02:17,241 WARN impl.MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-hbase.properties,hadoop-metrics2.properties
+
+
+无配置文件？：hadoop-metrics2-hbase.properties,hadoop-metrics2.properties
+
+-------------------------------------------
+
+
+
+
+
+************************GIT***************************************
+
+已存在的文件夹
+
+cd existing_folder
+git init
+git remote add origin http://gitlab.xfyun.cn/jbchen6/cicd.git
+git add .
+git commit -m "Initial commit"
+git push -u origin master
+
+
+已存在的 Git 版本库
+cd existing_repo
+git remote rename origin old-origin
+git remote add origin http://gitlab.xfyun.cn/jbchen6/cicd.git
+git push -u origin --all
+git push -u origin --tags
+
+
+=================================================
+$ git push -u origin master
+To github.com:ShellMount/BigDataExamples.git
+ ! [rejected]        master -> master (non-fast-forward)
+error: failed to push some refs to 'git@github.com:ShellMount/BigDataExamples.git'
+
+$ git pull origin master
+$ git push --force git@github.com:ShellMount/BigDataExamples.git
+
+=================================================
+更新内容后上传
+
+git fetch
+git merge
+
+git add .
+git commit -m "Initial commit"
+git push -u origin master
+

@@ -35,7 +35,7 @@ object ModuleSpark {
       // 本地开发环境设置为local mode, 2线程
       // 实际部署的时候，通过提交命令行进行设置
       // 开发环境设置：-Dspark.master=spark://192.168.0.211:7077
-      // .setMaster("local[2]")
+      .setMaster("local[2]")
 
     // 创建SparkContext上下文对象
     val sc = SparkContext.getOrCreate(conf)

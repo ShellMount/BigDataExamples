@@ -18,7 +18,7 @@ object WordCount {
   def main(args: Array[String]): Unit = {
     val sc = new SparkConf()
       .setAppName("WordCount")
-      .setMaster("local[2]")
+      .setMaster("local[3]")
 
     val ssc = new SparkContext(sc)
 

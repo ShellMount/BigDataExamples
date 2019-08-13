@@ -9,6 +9,9 @@ import org.apache.spark.{SparkConf, SparkContext}
   *
   * Spark Application 编程模板
   *
+  * run on cluster:
+  * ./bin/spark-submit --master spark://192.168.0.211:7077 \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark ../api.jar
   **/
 
 object ModuleSpark {
@@ -67,7 +70,7 @@ object ModuleSpark {
       *
       * 对RDD直接的操作，将在Executor中执行并显示。
       */
-    // 本行结果显示在Executors
+    // 本行结果显示在Executors，不会在Driver提交的控制台显示结果
     wordCountRDD.foreach(println)
 
     println("--------------SORT-----------------")

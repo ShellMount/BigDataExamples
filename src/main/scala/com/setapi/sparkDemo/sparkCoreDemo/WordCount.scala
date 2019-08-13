@@ -16,13 +16,13 @@ object WordCount {
   val logger = Logger.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
-    val sc = new SparkConf()
+    val conf = new SparkConf()
       .setAppName("WordCount")
       .setMaster("local[3]")
 
-    val ssc = new SparkContext(sc)
+    val sc = new SparkContext(conf)
 
-    val linesRDD = ssc.textFile("/bigdata/datas/usereventlogs/2015-12-20/20151220.log")
+    val linesRDD = sc.textFile("/bigdata/datas/usereventlogs/2015-12-20/20151220.log")
 
     logger.warn("RDD中每个元素的数据类型是Array[T] : " + linesRDD.take(1).getClass)
 
@@ -33,14 +33,14 @@ object WordCount {
     logger.warn(s"文件中共有单词数量: ${count}")
 
     logger.warn(s"词频统计: ")
-    val wordCount: RDD[(String, Int)] = words.map((_, 1)).reduceByKey(_+_).sortBy(_._2, false)
+    val wordCount: RDD[(String, Int)] = words.map((_, 1)).reduceByKey(_ + _).sortBy(_._2, false)
     wordCount.take(10).foreach(println)
 
     logger.warn("collect中保存 : 实际环境中很有可能占用很大的内存")
     wordCount.collect.take(5).foreach(println)
 
     val path = new Path("/datas/wordcount.txt")
-    val fs = FileSystem.get(ssc.hadoopConfiguration)
+    val fs = FileSystem.get(sc.hadoopConfiguration)
     if(!fs.exists(path)) wordCount.saveAsTextFile("/datas/wordcount.txt")
 
     Thread.sleep(10000*1000)

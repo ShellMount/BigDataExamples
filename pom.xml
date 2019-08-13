@@ -231,7 +231,7 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-            <!-- scala compile tool and run it before compiling -->
+            <!-- scala compile tool and run it before packing -->
             <plugin>
                 <groupId>org.scala-tools</groupId>
                 <artifactId>maven-scala-plugin</artifactId>

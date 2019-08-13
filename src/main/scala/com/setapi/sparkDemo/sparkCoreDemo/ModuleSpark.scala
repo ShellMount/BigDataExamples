@@ -31,7 +31,8 @@ object ModuleSpark {
       .setAppName("ModuleSpark")
       // 本地开发环境设置为local mode, 2线程
       // 实际部署的时候，通过提交命令行进行设置
-      .setMaster("local[2]")
+      // 开发环境设置：-Dspark.master=spark://192.168.0.211:7077
+      // .setMaster("local[2]")
 
     // 创建SparkContext上下文对象
     val sc = SparkContext.getOrCreate(conf)
@@ -50,6 +51,9 @@ object ModuleSpark {
 
     val wordCountRDD = tupleRDD.reduceByKey(_ + _)
 
+    // 多次使用的RDD放到内存
+    wordCountRDD.cache()
+
     // 对统计出的词频排序
     val sortedRDD = wordCountRDD.map(tuple => tuple.swap).sortByKey(false)
     val sortedRDD2 = wordCountRDD.sortBy(_._2, false)
@@ -57,7 +61,15 @@ object ModuleSpark {
 
     /**
       * 结果输出
+      *
+      * RDD#take 和 RDD#TOP 将数据以数据的形式返回给Driver,
+      * 然后在Driver上显示
+      *
+      * 对RDD直接的操作，将在Executor中执行并显示。
       */
+    // 本行结果显示在Executors
+    wordCountRDD.foreach(println)
+
     println("--------------SORT-----------------")
     sortedRDD.take(10).foreach(tuple => println(tuple._1 + "-->" + tuple._2))
 
@@ -67,6 +79,9 @@ object ModuleSpark {
     /**
       * 关闭资源
       */
+    // 解除缓存
+    wordCountRDD.unpersist()
+
     // 为了开发测试时监控页面能够看到Job，线程暂停
     Thread.sleep(10000 * 1000)
     sc.stop()

@@ -5,7 +5,6 @@ import java.util
 import java.util.Date
 
 import com.setapi.bigdata.java.common.EventLogConstants
-import com.setapi.bigdata.java.common.EventLogConstants.LOG_COLUMN_NAME_EVENT_NAME
 import com.setapi.bigdata.java.util.LogParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
@@ -18,8 +17,13 @@ import org.apache.spark.{SparkConf, SparkContext}
   * Spark Application 编程模板
   *
   * run on cluster:
-  * ./bin/spark-submit --master spark://192.168.0.211:7077 \
-  * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark ../api.jar
+  * ./spark-2.4.3-bin-hadoop2.7/bin/spark-submit \
+  * --master spark://192.168.0.211:7077 \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.AnalysisFromHiveFilesSpark \
+  * --jars ./AnalisysFromHiveFilesSpark-depends.jars/uasparser-0.6.1.jar,\
+  * /opt/spark/etl-hfile-saprk-run-hbase-depends.jars/hbase-common-2.2.0.jar,\
+  * ./AnalisysFromHiveFilesSpark-depends.jars/jregex-1.2_01.jar \
+  * bigdata-1.0-SNAPSHOT.jar
   **/
 
 object AnalysisFromHiveFilesSpark {
@@ -71,7 +75,7 @@ object AnalysisFromHiveFilesSpark {
         val logInfo: util.Map[String, String] = new LogParser().handleLogParser(log)
 
         // 获取事件的类型
-        val eventAlias = logInfo.get(LOG_COLUMN_NAME_EVENT_NAME)
+        val eventAlias = logInfo.get(EventLogConstants.LOG_COLUMN_NAME_EVENT_NAME)
 
         (eventAlias, logInfo)
       })

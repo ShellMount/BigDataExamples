@@ -90,12 +90,20 @@ https://blog.csdn.net/hliq5399/article/details/78193113
 
 
 ****************HVIE**********************
+
+配置
+
+
+启动
+  ./hive --service metastore &
+  ./hive
+
+
 CREATE EXTERNAL TABLE IF NOT EXISTS HiveOnHdfs.student(
 id int,
 name string,
 age int,
 sex string
-
 ) COMMENT "学生表"
 ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t" 
 STORED AS PARQUET;

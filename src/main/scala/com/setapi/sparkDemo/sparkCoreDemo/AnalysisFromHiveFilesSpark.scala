@@ -8,6 +8,7 @@ import com.setapi.bigdata.java.common.EventLogConstants
 import com.setapi.bigdata.java.common.EventLogConstants.LOG_COLUMN_NAME_EVENT_NAME
 import com.setapi.bigdata.java.util.LogParser
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -100,7 +101,7 @@ object AnalysisFromHiveFilesSpark {
 
 
     // 统计每日UV
-    val uvCount = filteredRDD
+    val uvCountRDD: RDD[(String, Int)] = filteredRDD
       .map {
         case (date, url, uuid) => (date, uuid)
       }
@@ -122,7 +123,8 @@ object AnalysisFromHiveFilesSpark {
       */
     println(s"pvCount = ${pvCount}")
     println(s"uvCount = ")
-    uvCount.foreach(println)
+    // 下面的打印信息将显示在 Executor 的日志标准输出中
+    uvCountRDD.foreach(println)
 
     /**
       * 关闭资源

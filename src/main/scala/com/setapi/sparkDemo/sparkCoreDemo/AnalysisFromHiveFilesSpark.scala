@@ -24,6 +24,19 @@ import org.apache.spark.{SparkConf, SparkContext}
   * /opt/spark/etl-hfile-saprk-run-hbase-depends.jars/hbase-common-2.2.0.jar,\
   * ./AnalisysFromHiveFilesSpark-depends.jars/jregex-1.2_01.jar \
   * bigdata-1.0-SNAPSHOT.jar
+  *
+  * >>>
+  * you can run app on deploy-mode of cluster :
+  * ./spark-2.4.3-bin-hadoop2.7/bin/spark-submit \
+  * --master spark://192.168.0.211:7077 \
+  * --deploy-mode cluster \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.AnalysisFromHiveFilesSpark  \
+  * --jars \
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/uasparser-0.6.1.jar,\
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/hbase-common-2.2.0.jar,\
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/jregex-1.2_01.jar \
+  * hdfs://hnamenode:9000/sparkapps/bigdata-1.0-SNAPSHOT.jar
+  *
   **/
 
 object AnalysisFromHiveFilesSpark {

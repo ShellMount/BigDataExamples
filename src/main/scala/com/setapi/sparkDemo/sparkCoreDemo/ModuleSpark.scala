@@ -12,6 +12,59 @@ import org.apache.spark.{SparkConf, SparkContext}
   * run on cluster:
   * ./bin/spark-submit --master spark://192.168.0.211:7077 \
   * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark ../api.jar
+  *
+  * >>>
+  * you can run app on deploy-mode of cluster :
+  * ./spark-2.4.3-bin-hadoop2.7/bin/spark-submit \
+  * --master spark://192.168.0.211:7077 \
+  * --deploy-mode cluster \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark  \
+  * --jars \
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/uasparser-0.6.1.jar,\
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/hbase-common-2.2.0.jar,\
+  * hdfs://hnamenode:9000/sparkapps/AnalisysFromHiveFilesSpark-depends.jars/jregex-1.2_01.jar \
+  * hdfs://hnamenode:9000/sparkapps/api.jar
+  *
+  * >>>
+  * can set resources with submit:
+  * >> client deploy-mode:
+  * ./bin/spark-submit --master spark://192.168.0.211:7077 \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark \
+  * --deploy-mode client \
+  * --driver-memory 512M \
+  * --executor-memory 1g \
+  * --executor-cores 1 \
+  * --total-executor-cores 2 \
+  * ../api.jar
+  *
+  * >> cluster deploy-mode:
+  * ./bin/spark-submit --master spark://192.168.0.211:7077 \
+  * --class com.setapi.sparkDemo.sparkCoreDemo.ModuleSpark \
+  * --deploy-mode cluster \
+  * --driver-memory 512M \
+  * --driver-cores 2 \
+  * --executor-memory 1g \
+  * --executor-cores 1 \
+  * --total-executor-cores 2 \
+  * ../api.jar
+  *
+  * >>> 特别的设置优化点
+  * 运行在standalone模式下时，work目录的设置： ${SPARK_HOME}/conf/spark-env.sh
+  * SPARK_WORKER_DIR     ： 默认在 ${SPARK_HOME}/work
+  * SPARK_WORKER_OPTS="-Dspark.worker.cleanup.enabled=true \
+  *   -Dspark.worker.cleanup.interval=1800 \
+  *   -Dspark.worker.cleanup.appDataTt=7*24*3600"
+  *
+  * >>> 运行日志保留: 关闭APP后，在WEBUI：18080中再次打开APP运行JOB日志
+  * 默认配置文件中设置： ${SPARK_HOME}/spark-defaults.conf
+  * SPARK_HISTORY_OPTS
+  * spark.eventLog.enabled  true
+  * spark.eventLog.dir      hdfs://hnamenode:9000/datas/spark-running-logs/
+  * spark.eventLog.compress true
+  * 也可在SparkConf中set
+  *
+  *
+  *
   **/
 
 object ModuleSpark {
@@ -36,6 +89,10 @@ object ModuleSpark {
       // 实际部署的时候，通过提交命令行进行设置
       // 开发环境设置：-Dspark.master=spark://192.168.0.211:7077
       .setMaster("local[2]")
+      // 设置记录此应用的事件EventLog
+      .set("spark.eventLog.enabled", "true")
+      .set("spark.eventLog.compress", "true")
+      .set("spark.eventLog.dir", "hdfs://hnamenode:9000/datas/spark-running-logs/ModuleSpark")
 
     // 创建SparkContext上下文对象
     val sc = SparkContext.getOrCreate(conf)

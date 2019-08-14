@@ -1975,6 +1975,28 @@ redis-cli -h hnamenode
 配置
 
 
+Spark-Submit 提交优化，见 ModuleSpark.scala
+
+以下配置后未成功：
+运行日志被保留：app运行完成后，仍然可以查看到日志：
+默认配置文件中设置： ${SPARK_HOME}/spark-defaults.conf
+SPARK_HISTORY_OPTS
+spark.eventLog.enabled  true
+spark.eventLog.dir      hdfs://hnamenode:9000/datas/spark-running-logs
+spark.eventLog.compress true
+
+${SPARK_HOME}/conf/spark-env.sh
+export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=18080 -Dspark.history.retainedApplications=3 -Dspark.history.fs.logDirectory=hdfs:/hnamenode:9000/datas/spark-running-logs"
+
+启动history-log:
+./sbin/start-history-server.sh
+
+运行完成的日志，要在 18080 端口查看（但有的为啥能与4040集成？待研究）
+
+也可在APP程序中设置
+
+
+
 
 
 

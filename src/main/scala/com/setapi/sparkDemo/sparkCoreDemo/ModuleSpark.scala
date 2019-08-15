@@ -61,6 +61,15 @@ import org.apache.spark.{SparkConf, SparkContext}
   * spark.eventLog.enabled  true
   * spark.eventLog.dir      hdfs://hnamenode:9000/datas/spark-running-logs/
   * spark.eventLog.compress true
+  *
+  * OR：
+  * ${SPARK_HOME}/conf/spark-env.sh
+  * export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=18080 \
+  * -Dspark.history.retainedApplications=3 \
+  * -Dspark.history.fs.logDirectory=hdfs:/hnamenode:9000/datas/spark-running-logs
+  * -Dspark.history.fs.cleaner.enabled=true \
+  * "
+  *
   * 也可在SparkConf中set
   *
   *

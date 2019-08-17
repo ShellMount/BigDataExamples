@@ -105,7 +105,7 @@ object GroupSortShuffleDemo {
       // 本地开发环境设置为local mode, 2线程
       // 实际部署的时候，通过提交命令行进行设置
       // 开发环境设置：-Dspark.master=spark://192.168.0.211:7077
-      .setMaster("local[2]")
+      //.setMaster("local[2]")
     // 设置记录此应用的事件EventLog
     // 该设置，会让APP优先寻找与日志相关的内容
     // 且会影响到  SparkContext.getOrCreate创建时的动作，也会先去寻找相关的文件

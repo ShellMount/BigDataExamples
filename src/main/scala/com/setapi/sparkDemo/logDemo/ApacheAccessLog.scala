@@ -52,4 +52,17 @@ object ApacheAccessLog {
       m.group(9).toLong
     )
   }
+
+  /**
+    * 用于对数据过滤，不符合正则的数据过滤掉，否则后续解析出错
+    * @param log
+    * @return
+    */
+  def isValidateLogLine(log: String): Boolean = {
+    // 使用正则表达式进行匹配
+    val res: Option[Regex.Match] = PARTTERN.findFirstMatchIn(log)
+
+    // 返回不为空时的数据则保留
+    !res.isEmpty
+  }
 }

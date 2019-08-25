@@ -33,13 +33,15 @@ object LogAnalyzerSpark {
     val accessLogsRDD = sc
       // 读取文件
       .textFile(logFile)
+      // 过滤掉不合格数据
+      .filter(log => ApacheAccessLog.isValidateLogLine(log))
       // 解析数据，将数据封装起来
       .map(log => ApacheAccessLog.parseLogLine(log))
 
     // 缓存数据
     accessLogsRDD.persist(StorageLevel.MEMORY_AND_DISK)
 
-    println(s"Count: ${accessLogsRDD.count()} \n ${accessLogsRDD.first()}")
+    println(s"Count: ${accessLogsRDD.count()} \n${accessLogsRDD.first()}")
 
 
     /**
@@ -88,10 +90,12 @@ object LogAnalyzerSpark {
       * 需求4： 求endpoint统计的TOPN
       */
     val topEndpointRDD = accessLogsRDD
-        .map(log => (log.endpoint, 1))
-        .reduceByKey(_ + _)
-        .sortBy(_._2)
-        .take(10)
+      .map(log => (log.endpoint, 1))
+      .reduceByKey(_ + _)
+      // .sortBy(_._2, false)
+      // .take(10)
+      // 使用TOP, 能够提升速度
+      .top(5)(OrderingUtils.SecondValueOrdering)
 
     println(s"endpoint sorted: ${topEndpointRDD.mkString("[", ", ", "]")}")
 

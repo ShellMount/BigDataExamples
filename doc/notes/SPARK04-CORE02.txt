@@ -1,0 +1,425 @@
+
+查看spark-shell脚本
+    "${SPARK_HOME}"/bin/spark-submit --class org.apache.spark.repl.Main --name "Spark shell" "$@"
+Spark中所有的应用Application都是通过
+    spark-submit进行提交的
+
+--deploy-mode 
+    DEPLOY_MODE
+        Whether to launch the driver program locally ("client") or on one of the worker machines inside the cluster ("cluster")(Default: client).
+    一言以蔽之：
+        SparkApplication运行时Driver Program运行的地方（针对将Spark Application运行在Cluster环境中）
+        有两种方式：
+        -1, client
+            提交应用的地方（执行spark-submit脚本的地方），就在那台机器提交application应用所在的机器上运行，启动JVM Process。
+        -2, cluster 
+            运行在Cluster的从节点上
+                SparkStandalone：运行在Worker节点
+                YARN：NodeManager节点
+    建议：
+        在实际项目企业中
+        - client：
+            程序开发、测试、性能调用
+            会在client端显示日志信息，便于我们观察监控程序运行
+        - cluster：
+            生产集群采用此方式
+            不需要及时查看日志信息（Job调度相关信息），除非出问题，可以再去节点查看。
+    
+将TrackLogAnalyzer运行在Spark Standalone Cluster
+- 采用client：deploy mode
+bin/spark-submit \
+--master spark://bigdata-training01.hpsk.com:7077 \
+--deploy-mode client \
+/opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/learning-spark.jar
+
+- 采用cluster：deploy mode
+bin/spark-submit \
+--master spark://bigdata-training01.hpsk.com:7077 \
+--deploy-mode cluster \
+/opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/learning-spark.jar
+
+
+在企业实际运行SparkApplication来说，很关键的一点就是资源分配
+    Spark Application运行在集群环境中
+- Driver Program -> JVM Process 
+    Memory
+    CPU CORES
+- Executors -> JVM Process
+    Memory
+    CPU CORES
+    Nubmer
+
+案例一：集群环境为Standalone，以Client Deploy Mode
+    2个Executor，每个Executor有1G内存和1Core CPU
+    Driver内存为512M
+bin/spark-submit \
+--master spark://bigdata-training01.hpsk.com:7077 \
+--deploy-mode client \
+--driver-memory 512M \
+--executor-memory 1g \
+--executor-cores 1 \
+--total-executor-cores 2 \
+/opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/learning-spark.jar    
+
+案例二：集群环境为Standalone，以Cluster Deploy Mode
+    1个Executor，每个Executor有1G内存和1Core CPU
+    Driver内存为1g和1 CORE CPU
+bin/spark-submit \
+--master spark://bigdata-training01.hpsk.com:7077 \
+--deploy-mode cluster \
+--driver-memory 1g \
+--driver-cores 1 \
+--executor-memory 1g \
+--executor-cores 1 \
+--total-executor-cores 1 \
+/opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/learning-spark.jar    
+
+
+如果企业中SparkApplication运行在Standalone模式下的话，需要设置Application本地运行的工作目录相关参数${SPARK_HOME}/conf/spark-env.sh配置文件中：
+- 设置目录：
+    SPARK_WORKER_DIR=/data01/spark-work01,/data02/spark-work02
+- 目录数据清理
+    SPARK_WORKER_OPTS="-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTt=7 * 24 * 3600"
+
+
+Spark Application 监控
+    -1, Application Running
+        通过WEB UI监控查看
+        地址：http://driver-node:4040
+    -2, Application Complete
+        如何监控呢？？？？
+        回忆一下：MapReduce运行结束以后，如何进行监控的？？？
+            - 第一步、启用日志聚集功能
+                当应用运行完成以后，将运行日志信息存储到HDFS
+            - 第二步、启动服务MRHistoryServer显示信息
+                读取日志信息文件，通过WEB UI界面展示
+Event logging is not enabled   
+    在Spark中认为程序运行时日志以事件Event方式记录
+    表示的是：
+        事件日志没有被存储起来，当应用运行完成（成功或失败）以后。
+    参数：
+        http://spark.apache.org/docs/1.6.1/configuration.html#spark-ui
+        - spark.eventLog.enabled
+            true
+        - spark.eventLog.dir
+            设置为HDFS存储目录
+        - spark.eventLog.compress
+            存储事件日志文件是否压缩 true 
+    设置方式有多种：
+        - 程序中设置
+            val sparkConf = new SparkConf()
+            // 设置记录此应用的EventLog
+            sparkConf.set("spark.eventLog.enabled", "true")
+            sparkConf.set("spark.eventLog.dir", "hdfs://bigdata-training01.hpsk.com:8020/datas/spark/eventLogs/")
+            sparkConf.set("spark.eventLog.compress", "true")
+        - 默认配置文件设置 - 常用方式
+${SPARK_HOME}/conf/spark-default.conf
+    当每个SparkApplication运行的时候，都会读取里面的配置信息。
+配置启动保存event log：
+    spark.eventLog.enabled           true
+    spark.eventLog.dir hdfs://bigdata-training01.hpsk.com:8020/datas/spark/eventLogs/
+    spark.eventLog.compress	true
+
+Spark Standalone中Master可以读取EventLog信息并且解析展示
+
+思考：
+    当Spark Application运行在Local Mode，如何在应用运行完成以后查看EventLog呢？？
+解决：
+    Spark中有一个服务，专门读取EventLogs信息并展示
+        HistoryServer 
+    -1. 告知服务到哪里去读取EventLogs日志信息
+        spark.history.fs.logDirectory
+        是否定期检查EventLogs文件，进行清除，默认情况下保存7天，每天坚持一次
+        spark.history.fs.cleaner.enabled
+${SPARK_HOME}/conf/spark-env.sh 
+    SPARK_HISTORY_OPTS="-Dspark.history.fs.logDirectory=hdfs://bigdata-training01.hpsk.com:8020/datas/spark/eventLogs/ -Dspark.history.fs.cleaner.enabled=true"
+    -2. 启动服务
+        $ sbin/start-history-server.sh
+    -3. WEB UI监控 
+        http://historyserver-ip:18080
+
+
+========================================================
+
+Spark核心抽象：
+    数据结构 RDD
+    - 官方文档：
+        http://spark.apache.org/docs/1.6.1/programming-guide.html
+a resilient distributed dataset (RDD)
+    which is a collection of elements partitioned across the nodes of the cluster that can be operated on in parallel. 
+    - 源码说明：
+Represents an immutable,partitioned collection of elements that can be operated on in parallel.
+
+Internally, each RDD is characterized by five main properties:
+ *
+ *  - A list of partitions
+    protected def getPartitions: Array[Partition]
+    每个RDD有一些分区组成
+    类似于SCALA中List集合，不同的是分为多个部分
+ *  - A function for computing each split
+    def compute(split: Partition, context: TaskContext): Iterator[T]
+    每个分片的数据应用一个函数进行处理
+    函数基本上都是高阶函数 类似于SCALA中List中的函数
+ *  - A list of dependencies on other RDDs
+    protected def getDependencies: Seq[Dependency[_]] = deps
+    每个RDD依赖于一些列的RDD
+    lineage
+ *  - Optionally, a Partitioner for key-value RDDs (e.g. to say that the RDD is hash-partitioned)
+    RDD[(Key, Value)] 当RDD的数据类型为二元组的时候，可以指定数据分区
+    分区器Partitioner，默认采用HashPartitioner
+ *  - Optionally, a list of preferred locations to compute each split on (e.g. block locations for
+   an HDFS file)
+    最优位置：针对RDD中分区的数据处理的时候
+    比如要处理一个分区的数据，此时有以下几种存储的位置
+    preferred locations    
+
+
+分区partition
+    从数据存储的角度来看
+分片split
+    从数据处理的角度来看
+
+
+在SparkCore中，创建RDD两种方式
+    - 并行化集合
+        sc.parallelize(List(1,2,3,4,5))
+        
+    - 从HDFS/Local System等支持HADOOP FS地方读取
+        sc.textFile("")
+
+
+对于RDD的Persistence来说
+    - 持久化  属于lazy，需要RDD.action进行触发
+        rdd.cache()  // 最理想，将数据分析都放入内存中
+    - unpersist
+        eager  立即生效
+    - persist
+        rdd.cache 考虑一点，将数据放到内存中，Eexcutor内存
+        要考虑内存够大呀？？
+
+什么情况下将RDD进行持久化？？
+    - 当某个RDD需要被多次使用的时候，应该考虑进行cache
+    - 当某个RDD通过比较复杂的计算得来的时候，使用不止一次，考虑进行chache
+
+常用的RDD的Transformation和Action
+    - join()
+        关联，类似于SQL或者MapReduce Join，字段
+        RDD[(Key, Value)], 依据Key进行关联
+    - union()
+        合并
+        要求合并的RDD的类型要一致
+    - mapPartitions()
+        功能类似于map函数，不一样的是
+        map：对RDD中的每个元素应用函数
+            map(item => func(item))
+        mapPartitions: 对RDD中的每个分区应用函数
+            mapPartitions(iter => func(iter))
+
+    - coalesce()/repartition()
+        调整RDD的分区数目
+        def coalesce(numPartitions: Int, shuffle: Boolean = false)(implicit ord: Ordering[T] = null)
+        在实际开发中什么时候需调整分区数目呢？？
+        - 增加RDD分区
+            不多，考虑并行度
+            一般情况下，在创建RDD的时候就会指定合适的分区数目
+        - 减少RDD分区
+            为什么呢？？？ 一个分区对应一个Task进行处理
+            如果分区中的数据较少，甚至有的分区没有数据，运行Task是需要时间的，效率低下
+    - 输出函数foreach()/foreachPartition()     
+        foreach():
+            针对每个元素进行调用函数，与map函数类似
+        foreachPartition() ：  -> 使用此比较多
+            针对每个分区的数据进行代用函数，与mapPartitions类似
+    - 重要的重点API（作为作业）
+        class PairRDDFunctions[K, V](self: RDD[(K, V)])
+            - combineByKey
+            - aggregateByKey
+            - foldByKey
+            功能与reduceByKey差不多，但是企业实际开发中往往使用上述的三个函数
+
+datas：
+aa 78
+bb 98
+aa 80
+cc 98
+aa 69
+cc 87
+bb 97
+cc 86
+aa 97
+bb 78
+bb 34
+cc 85
+bb 92
+cc 72
+bb 32
+bb 23
+
+需求：
+    先按照第一个字段进行分组且排序，在组内按照第二个字段进行排序并且获取各个组内前几个值Top3.
+
+分组的时候，肯定将相同Key的值分发到一个分区中，也就是被一个Task进行处理，如果某个组内的数据比较多，在一个Task中进行排序，将会出现数据倾斜，可能出现运行很慢或者内存不足排序出错。
+    分阶段进行聚合操作（分阶段进行排序）
+
+
+Spark Application 
+    Cluster 
+        - Spark Standalone 
+        - Hadoop YARN
+        - Apache Mesos
+    优点：
+        - 多语言的开发
+            SCALA、JAVA、Python、R、SQL
+        - 一次开发，多次运行
+            运行在不同的环境下
+Spark on YARN 
+    Spark Application 运行在YARN集群环境下。
+
+只要是运行Spark Application 
+    ${SPARK_HOME}/bin/spark-submit 
+
+MapReduce 程序运行在YARN上的时候，Client提交Application的时候连接的是ResourceManager，端口是8032
+    来源于YARN配置文件：yarn-site.xml
+Spark on YARN 运行的时候，也需要将yarn相关配置文件放到运行的classpath下面去。
+
+注意一点：
+    Spark配置选项来说
+        程序中SparkConf 优先级 大于 提交应用Spark-submit
+
+Spark Application 
+    - Driver 
+        应用的管理者
+    - Executors 
+        Job中Task运行的地方
+
+YARN Architecture
+    - AppMaster 
+        每个应用有个应用的管理者
+    - Container
+        容器中，Task
+
+综合上述：
+    - Spark on YARN ：Client Deploy Mode 
+        -i. Driver 
+            运行在Client
+        -ii. AppMaster 
+            运行在NodeManager的Container中
+        Driver 与 AppMaster 进行交互
+            - Driver 管理应用的，知道Application需要多少资源运行多少个Executors， 找AppMaster
+            - AppMaster 再去RM进行交互，申请资源，在NM的Container中运行Executors
+        -iii. Executors 
+            运行在NodeManager的Container中
+
+    - Spark on YARN ：Cluster Deploy Mode 
+        将Driver和AppMaster合并在一起
+        - AppMaster
+            Driver，负责所有Driver工作
+        - Executors
+            运行在NodeManager的Container中
+
+
+SCALA中字符串不仅仅可以使用双引号表示，也可以使用三引号表示。
+
+在数据分析中出现脏数据，该如何处理呢？？？？
+    - 过滤掉：真正的确定了数据时不符合规则，不可取
+        - ： bash 
+    - 转换数据：
+        将“脏数据”中的字段值进行转换，在某种情况下，会产生此类数据，符合规律，需要进行处理。
+
+=========================================================
+SparkCore 
+    分布式大数据处理分析框架
+    思想：
+        抽象-> 将要处理的数据封装到一个数据结构中，集合，RDD
+    案例： 
+        -1, 词频统计分析WordCount
+            关键，最重要的
+        -2, 网站指标统计分析
+            PV、UV、其他API
+        -3, 分组排序TopKey
+            类似二次排序，如何处理数据倾斜（分阶段聚合）
+        -4, 网站日志分析统计
+            四个需求，RDD#API
+            正则表达式解析数据，封装到CASE CLASS
+    程序运行：
+        -1, Local Mode 
+            spark-shell：交互式命令行，来源SCALA语言
+            集成开发环境IDE：IDEA
+        -2, Cluster Mode 
+            deploy mode：client - cluster
+            - Standalone Cluster 
+                配置、启动、使用
+            - YARN Cluster
+                两种部署方式
+            - HistoryServer 
+                监控运行完成的Spark Application
+
+SparkCore核心深入
+    - 源码解读
+        关键类的剖析，更加透彻了解Spark 设计
+        比如：RDD类的设计、如何提交Job
+    - 深入Job调度
+        如何调度Job
+
+===================================================
+从运行的网站统计分析案例入手：
+    统计pv、uv以及jion和union操作
+
+-1, 一个Spark Application有很多Job
+    思考：Job是怎么定义的呢？是如何产生的呢？
+        RDD#action -> 触发一个Job
+        当一个RDD调用的函数返回值不是RDD的时候，就是Action。
+-2, 一个Job中有很多Stage
+    在一个Job中，包含很多RDD，RDD之间是相互依赖的，形成一个DAG图（有向无环图），将这些RDD划分成一些部分，这些部分称为Stage。
+    思考：
+        Stage是如何划分的呢？？？？？
+        依据的是RDD之间的依赖关系，当RDD之间的依赖为宽依赖的时候，将进行划分Stage。
+RDD之间的依赖关系：
+    - wide dependency 
+        宽依赖    -> 产生Shuffle
+    - narrow dependency
+        窄依赖
+如何区分是窄依赖还是宽依赖呢？？？？？
+    RDDa(pA1,pA2,pA3,pA4) -> RDDb(pB1,pB2,pB3,pB4)
+            RDDb通过调用RDDa的函数生成的RDD
+    一 对 一 
+        窄依赖
+        RDDa中的每个分区的数据 调用func以后 数据全部在RDDb的一个分区中
+        pA1  -> pB1
+        pA2  -> pB2
+        pA3  -> pB3
+        pA4  -> pB4
+        父RDD一个分区的数据经过func以后及您到子RDD的一个分区
+    一 对 多
+        宽依赖
+        父RDD一个分区的数据经过func以后及您到子RDD的多个分区
+        pA1  -func-> pB1,pB2,pB3,pB4
+        pA2  -func-> pB1,pB2,pB4
+        pA3  -func-> pB2,pB3,pB4
+        pA4  -func-> pB1,pB2,pB3,pB4
+        对比MapReduce框架来说
+            一个MapTask输出给多个ReduceTask拷贝：Shuffle
+
+The shuffle is Spark’s mechanism for re-distributing data so that it’s grouped differently across partitions.
+    Spark重新分发数据的一个机制，将数据分组到不同的分区中。
+    Spark中Shuffle过程中产生的数据会写入到本地磁盘中，当Job完成以后，本地磁盘的Shuffle数据不会进行立即删除，会保留一段时间。如果下一个Job将使用到上一个Job的Shuffle过程中产生的数据，直接从磁盘中读取（不需重新进行计算），进行使用分析。
+    思考： 
+        Shuffle的数据本地磁盘在哪里呢？？？？
+        http://spark.apache.org/docs/1.6.1/configuration.html#shuffle-behavior
+        spark.local.dir：默认值为/tmp，也就是系统的/tmp临时目录，注意在实际的项目中肯定要进行设置。
+-3, 一个Stage中有很多Task 
+    一个Stage中RDD的分区数目为多少，一个分区的数据给一个Task进行处理分析。
+    注意一点：   
+        实际企业项目中，比如某个Job运行时间很长，需要查看各个Stage的运行时间，以及Stage中各个Task运行时间、Task处理的数据量（条目数）和GC时间。
+        Task以Thread方式运行在Executor中。
+
+SparkContext 
+    -1. 在Spark Application的Driver Program中创建的
+    -2. 读取要处理的数据
+        sc.textFile("")
+    -3. SparkContext进行对每个Job的调度
+        DAGScheduler
+        TaskScheduler
+        都属于SparkContext内部的对象
+
+

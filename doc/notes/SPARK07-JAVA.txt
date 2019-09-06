@@ -1,0 +1,94 @@
+
+企业中Spark 使用编程语言
+    -1, SCALA
+        函数 -> 高阶函数：参数的类型时函数
+    -2, JAVA
+        SPARK STREAMING 实时流式计算
+            JAVA 8之前：函数 -> 匿名内部类
+    -3, Python
+        编程语言排行榜中仅次于JAVA语言、C/C++/C#系列语言之外第三语言
+        SCALA + SHELL
+        SparkSQL 数据分析  - 最多
+        SparkMLlib
+        统称为：pyspark 编程（基于Python的Spark开发）
+
+参考资源：
+第一部分、API参考
+    -1, JAVA语言 
+        http://spark.apache.org/docs/1.6.1/api/java/index.html
+    -2, Python 语言
+        http://spark.apache.org/docs/1.6.1/api/python/index.html
+第二部分、官方案例参考
+    -1, JAVA语言
+        ${SPARK_HOME}/examples/src/main/java/org/apache/spark/examples
+    -2, Python语言
+        ${SPARK_HOME}/examples/src/main/python
+
+
+SPARK 处理分析数据 三步走策略：
+    -1. input 
+        RDD / DataFrame / DStream
+    -2. process 
+        API(调用各个集合API，返回的数据类型与原先一致)
+    -3. output
+        API(触发一个Job执行)
+
+一定要记住，无论是什么语言开发Spark 应用，大家必须要看SPARK 源码
+
+
+
+intellij idea 默认快捷键模式下
+    自动补全变量名称 : Ctrl + Alt + v
+    自动补全属性名称 : Ctrl + Alt + f
+
+
+
+使用RDD#top(基于JAVA语言)
+    错误信息如下：
+Exception in thread "main" org.apache.spark.SparkException: Task not serializable
+........
+at com.bigdata.hpsk.spark.core.JavaWordCountSpark.main(JavaWordCountSpark.java:123)
+    分析：Task 不能序列化
+
+
+
+RDD转换为DataFrame有两种方式：
+    方式一：RDD[CASE CLASS]
+    方式二：自定义schema
+
+
+SparkSQL中对数据分析
+    - 基于SQL分析
+        从Hive过来
+        -1. 将DataFrame注册时临时表
+        -2. sqlContext.sql(".......")
+    - 基于DSL分析
+        DataFrame#API
+
+对于SparkStreaming来说
+    按照时间间隔划分数据为每一个批次的数据，使用RDD进行计算。
+    -1. 数据源
+        从哪里接收数据
+        企业中：从Kafka中接收数据，进行处理
+    -2. DStream Transformation
+        数据的转换处理
+        依据具体的业务需求而定，选择合适的API函数
+    -3. 实时处理的数据进行除数
+        Redis/HBase/RDBMS
+对于SparkStreaming来说企业中的使用，基于JAVa开发的还真不少。
+
+实际项目中SparkStreaming
+    - 数据源：KAFKA
+def createDirectStream[K, V, KD <: Decoder[K], VD <: Decoder[V]](
+      jssc: JavaStreamingContext,
+      keyClass: Class[K],
+      valueClass: Class[V],
+      keyDecoderClass: Class[KD],
+      valueDecoderClass: Class[VD],
+      kafkaParams: JMap[String, String],
+      topics: JSet[String]
+    ): JavaPairInputDStream[K, V]
+
+    - 输出数据：foreachRDD
+
+

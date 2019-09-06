@@ -1,0 +1,458 @@
+
+Apache Spark 核心编程（基础编程）
+    集批处理、交互式处理和流式处理 一栈式解决大数据解决方案
+    - Core
+        数据结构:分布式集合RDD
+        SparkContext
+        批处理（离线处理batch processiong），处理的数据N+1
+        注意：
+            每次处理的数据都是一个固定的数据集，而不是变化的
+    - SQL
+        DataFrame = RDD + schema
+        DataFrame = Dataset[Row]   Spark 2.x
+        SQLContext
+            External DataSources API
+        交互式处理（interactive processing）
+        注意：
+            每次处理的数据都是一个固定的数据集，而不是变化的
+    - Streaming
+        流式数据处理（Stream processing）框架：
+            要处理的数据就像流一样源源不断的产生，需要实时处理
+        对SparkCore的高层API封装和扩展，将流式的数据切分为小批次（按照时间间隔）的数据，然后进行处理。
+        DStream：集合，分离的流、离散的流
+        StreamingContext：SparkContext
+
+比如对于电商网络来说
+    无时无刻产生数据（page view 网页浏览数据，order订单数据），需要进行实时的数据处理。
+
+
+在大数据框架技术中，对于流式数据实时处理方案：
+    -1, 一条一条数据的处理
+        Storm：框架
+        实时性很高，亚秒级别，延迟性非常的低
+        阿里巴巴：Storm -> JStorm
+    -2, 一批次一批次数据的处理
+        时间间隔划分，时间比较短，比如1s或者5s
+        微批处理：近实时数据处理，实时不是太高，运行延迟性在毫秒到秒级别
+        SparkStreaming：逐渐使用广泛起来
+        Spark 2.2.x：延迟性降低到100ms以内
+大数据框架（针对流式数据处理框架）
+    Flink
+        出现比Spark要早，现在逐渐的在企业中使用起来，国内阿里巴巴，也在进行推广（组织广大的数据爱好者，翻译官方文档）
+        SCALA/JAVA 8
+大数据流式平台
+    Kafka（SCALA）
+        - 分布式发布订阅消息队列，存储数据
+        - 新版本中，流式处理数据
+
+企业中大数据公司数据处理结构
+    Lambda Architecture（三层架构）
+        - 接收数据：
+            从数据源端如何采集、接收要处理的数据
+        - 数据离线批处理（批处理层）
+            每次出来数据都是一批次，离线处理
+            MapReduce/Hive/SparkCore/SparkSQL
+        - 数据实时性处理（实时处理层）
+            数据一旦产生立马进行处理
+        - 视图层
+            对处理的数据进行前段展示
+
+对于高级的数据处理
+    MLlib和Graphx
+    使用SparkStreaming实时接收数据，并进行预处理，将数据给到MLlib和GraphX框架中，让他们进行实时预测分析统计。
+
+SparkStreaming处理数据的流程：
+    -1. 数据源
+        从哪里接收读取数据，进行数据的处理
+        Kafka（最多）/Flume（少数）/TCP Socket(开发测试)
+            DStream：分离的流
+    -2. 数据处理 
+        DStream#xx
+        针对不同的业务需求使用不同的方法（Transformation）
+        企业中最多两种类型统计：
+            - 实时累加统计
+                比如销售额
+                DStream#updateStateByKey(stateful)
+            - 实时统计某段时间内数据
+                趋势统计分析
+                比如：实时查看最近二十分钟内各个省份用户点击广告的流量统计
+                DStream#reduceByKeyAndWindow(window)
+    -3. 存储结果
+        其实就是调用RDD中API将数据存储，微批处理(core)
+        - Console 
+            控制台打印，开发测试
+        - Redis
+            基于内存的分布式的Key/Value数据库
+        - HBase
+            存储到Table中
+        - RDBMS
+            关系型数据库中 JDBC/MyBatis
+
+企业中对于流式典型的数据实时处理技术架构：
+Flume/SDK -> Kafka -> SparkStreaming/Storm -> Redis/HBase 
+
+
+常见应用：
+    -1. 网站实时指标统计
+        访客数\浏览量\订单量
+        当前活跃访客数\每个小时的访客数\各个区域的实时访客数
+        当前总的订单量\各个区域的订单量\各个类别商品的实时订单量
+        不同维度
+        ......
+    -2. 物流信息调度
+        寄件的物流信息，需要实时记录，跟踪，处理
+    -3. 金融
+        支付宝：信用积分
+    -4. 广告收入
+        门户网站和电商网站，很大一部分的收入来源于广告 
+        广告点击量 统计
+
+
+官方文档：
+    http://spark.apache.org/docs/1.6.1/streaming-programming-guide.html
+
+官方提供的Example
+    实时词频统计
+    - 数据源：
+        TCP Socket，监控某台机器某个端口（Socket），从Socket上读取数据
+        使用LINUX自带的nc软件
+        安装命令$ sudo rpm -ivh nc-1.84-22.el6.x86_64.rpm
+    - 数据展示
+        在控制台进行打印
+    
+在IDEA中开发SparkStreaming程序，添加如何依赖
+    <!-- Spark STREAMING -->
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-streaming_2.10</artifactId>
+        <version>${spark.version}</version>
+        <scope>compile</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-streaming-kafka_2.10</artifactId>
+        <version>${spark.version}</version>
+        <scope>compile</scope>
+    </dependency>
+
+
+对于SparkStreaming的开发和测试，通常在IDE工具，主要由于实时应用启动在spark-shell命令行稍微麻烦。
+
+SparkStreaming 从Socket读取的额数据处理时，运行Application监控可以看到，当启动应用的时候
+    ssc.start 
+发现运行一个
+    Streaming job running receiver 0
+    就是运行一个Receiver（启动一个Thread进行），用于接收Socket中的额数据，以便给SparkStreaming进行处理。
+
+$ bin/spark-shell --master local[3]  // 3 是最好的，至少写2
+    --master local[2]
+        -#, 2
+            表示的是运行在Local Mmode启动2个Thread
+        -#, 有一个Thread运行Receiver
+            接收数据源的数据
+            接收到的数据，SparkStreaming按照时间间隔划分为很多batch
+        -#, 其他的Thread用于运行Task
+            进行数据处理
+        当然为了测试模拟并行计算，最好设置为3
+
+
+Receiver
+    接收到的数据也是按照时间间隔划分成block的。
+
+batch interval：
+    Streaming每次处理数据的 时间间隔（处理多长时间的范围内的额数据）
+block interval：
+    块的时间间隔
+    默认的值：200ms，也就说Receiver每接收到200ms的数据，作为一个block进行存储在Executor的内存中，并且存储2个副本。
+计算：
+    一个batch 中有多少个block，也就意味着batch的RDD有多少个分区。
+    batch: 1s = 1000ms , block: 200ms
+        size = batch / block = 1000 / 200 = 5
+
+
+企业中的SparkStreaming程序优化点：
+    批次的数据处理是按照顺序执行的，只有前一个batch运行完成，才执行后一批次。注意一点：批次数据的执行时间execution time
+        execution time >  batch time 
+从WEB UI - [Streaming]监控
+    Total Delay > batch time 
+        Total Delay = Scheduling Delay + Processing Time
+    就会出现很多batch进行等待执行，越来越多，数据不能及时的处理，导致实时流式数据处理延迟性越来越大，如何进行优化呢？？
+        每一批次RDD在进行计算，增加RDD的partition = block 数目
+            size = batch / block 
+        从公式得知，调整block interval减少，size就变大
+            比如：block由原来的200 调整为 100
+            size = 1000 / 100 = 10 
+        但是要注意：
+            官方说明block interval不能小于50ms
+
+
+DStream 
+    分为两类（类似RDD中函数一样）
+    - Transformation (RDD#Transformation)
+        DStream -func-> DStream
+    - Output(RDD#action)
+        DStream -func-> 保存结果到其他外部存储系统中
+
+ =======================================================
+ Scala语言，基本编程
+    大数据两个框架Spark、Kafka
+
+假设一个场景：
+    数据源： 应用系统A 产生的 用户访问数据和订单数据
+                10000 条/秒
+                    | push：推送数据       
+                消息系统：队列     产生的数据量 > 数据量
+                    | pull：拉取数据
+    数据处理：SparkStreaming
+                1000 条/秒
+
+消息系统Kafka：  
+    分布式消息队列系统
+    发布/订阅功能
+    不恰当比喻：
+            发布者     ->   推送文章
+        微信公众号           - Topic 主题/类别      
+            订阅者1
+            订阅者2
+            订阅者3
+            订阅者4
+            ......
+
+一开始Kafka的功能：
+    -1. 分布式信息Message系统（发布/订阅功能）
+        0.8.x 
+    -2. Connector API 
+        将Kafka Topic中的数据保存到RDBMS中
+        0.9.x 
+    -3. Stream Compute
+        可以对Kafka中的数据进行流式计算处理
+        0.10.x
+
+SparkStreaming与Kafka集成，使用的版本为0.8.2.x 
+    http://kafka.apache.org/082/documentation.html
+
+Kafka Cluster
+    - 消息系统，存储数据
+        提交日志格式文件,存储在本地操作系统的磁盘上
+    - 分布式
+        有多台机器，存储数据
+    - Topic 
+        存储某一类的数据(消息)，类比微信公众号
+        存储数据类似于HDFS
+        -i, 按照分区partition存储
+            文件夹/文件
+        -ii, 分区数据有多个副本
+            replications
+    - 发布/订阅
+        消费者（用户）可以订阅Topic（类比于关注某个维系公众号），只要生产者向Topic发送数据，订阅者就可以自动的接收到数据，进行处理。
+
+
+Kafka 安装部署
+    类比于Zookeeper就好
+    - 单机模式
+        一台机器，一个Broker
+    - 伪分布式集群
+        一台机器 
+        启动多个Broker服务
+    - 完全分布式集群
+        多台机器
+        每台机器启动一个Broker服务
+
+Kafka 基于SCALA语言编程框架，使用的时候，需要进行编译，指定SCALA语言版本
+    - Scala 2.10.x
+    - Scala 2.11.x 
+    下载地址：
+        http://kafka.apache.org/downloads
+    选择的版本：
+        0.8.2.1
+第一步、下载
+    对应到Kafka版本以及SCALA版本
+    https://www.apache.org/dyn/closer.cgi?path=/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz
+第二步、解压与配置
+    上传到/opt/modules下面，解压
+    赋予执行权限
+    $ chmod u+x kafka_2.10-0.8.2.1.tgz
+    解压
+    $ tar -zxf kafka_2.10-0.8.2.1.tgz
+    替换Zookeeper JAR包
+    $ cd /opt/modules/kafka_2.10-0.8.2.1
+    $ rm -rf libs/zookeeper-3.4.6.jar
+    $ cp /opt/cdh-5.3.6/zookeeper-3.4.5-cdh5.3.6/zookeeper-3.4.5-cdh5.3.6.jar libs/
+    创建Kafka logs存储目录
+    $ cd /opt/modules/kafka_2.10-0.8.2.1
+    $ mkdir -p data/kafkaLogs
+    配置：
+        ${KAFKA_HOME}/config/server.properties
+        修改内容：
+# Hostname the broker will bind to. If not set, the server will bind to all interfaces        
+host.name=bigdata-training01.hpsk.com
+
+# A comma seperated list of directories under which to store log files
+log.dirs=/opt/modules/kafka_2.10-0.8.2.1/data/kafkaLogs
+
+# Zookeeper connection string (see zookeeper docs for details).
+zookeeper.connect=bigdata-training01.hpsk.com:2181/kafka
+
+第三步、启动Broker    
+    $ bin/kafka-server-start.sh -daemon config/server.properties
+
+第四步、创建Topic
+    $ bin/kafka-topics.sh --create --zookeeper bigdata-training01.hpsk.com:2181/kafka --replication-factor 1 --partitions 2 --topic testTopic
+    查看有哪些Topic
+    $ bin/kafka-topics.sh --list --zookeeper bigdata-training01.hpsk.com:2181/kafka
+
+第五步、测试
+    应该向Topic放入数据，编程调用JAVA API或者SCALA API都可以，然而Kafka安装包的bin目录下提供控制台命令行向Topic发送数据和消费数据。
+- 发送数据（生成者）
+$ bin/kafka-console-producer.sh --broker-list bigdata-training01.hpsk.com:9092 --topic testTopic 
+- 消费数据（消费者）
+$ bin/kafka-console-consumer.sh --zookeeper bigdata-training01.hpsk.com:2181/kafka --topic testTopic --from-beginning
+
+作业：
+    安装Kafka官方文档，配置伪分布式Kafka集群，要求有三个Broker
+
+
+Flume 
+    实时收集日志格式数据
+    source: spooling directory
+        实时监控某个目录，当目录中出现新的文件，立马进行读取收集
+
+Kafka与Flume集成
+    Flume框架实时收集数据，并不是存储数据，收集的数据要给存储系统
+    - KAFKA 作为sink - 最多
+        接收数据并存储
+        练习作业：完成
+    - KAFKA 作为 Soure 
+        作为数据的提供者
+    - KAFKA 作为Channel
+        数据收集中的管道缓冲
+
+关于KAFKA API使用，KAFKA 集群监控工具，KAFKA 数据存储内核
+    https://github.com/yahoo/kafka-manager
+
+
+Spark Streamig + Kafka Integration Guide
+    http://spark.apache.org/docs/1.6.1/streaming-kafka-integration.html
+
+无论Flume也好还是KAFKA也好与SparkStreaming集成有两种方式：
+    思考：为什么会有两种方式呢？？？
+        在于SparkStreaming如何获取Flume和KAFKA中的数据
+    方式一：push
+        Flume/KAFKA 将数据推送给SparkStreaming，就需要Receivers接收数据
+            被动性，推送
+        此种方式存在问题：
+            Receivers进行接收数据，给SparkStreaming进行处理
+                blocks 存储在Executors内存中，副本数
+            问题：
+                当接收的blocks数据没有被处理完，整个SparkStreaming应用停止，当再次启动应用的时候，未处理的和当时未处理完成的blocks数据丢失了。（除非将blocks也进行checkpoint到文件系统进行容灾备份WAL）
+    方式二：pull
+        SparkStreaming主动到Flume Agent Sink中或者Kafka Topic 中拉取数据
+            主动性，拉取
+        此种情况就没有Receivers Task，不会出现数据未处理或者多处理
+        比如： 从KAFKA Topic中获取数据
+            pull拉取数据，进行数据处理，处理完成以后，应用本身管理更新offset。
+                在雕塑batch datas的job的时候，决定获取Topic中各个partition中偏移量offset。
+        调用的KAFKA 底层消费者API。
+        - 说明：
+            此种方式下，每batch中RDD的分区数 = Topic 的分区数据，合理的设置Topic 的分区是非常关键。
+    
+    说明：从Spark 1.3开始，针对KAFKA和Flume出现pull方式获取数据
+
+KAFKA采用pull方式与SparkStreaming集成
+-1. pom.xml添加依赖
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka_2.10</artifactId>
+            <version>${spark.version}</version>
+            <scope>compile</scope>
+        </dependency>
+-2. 编程
+    // KAFKA CLUSTER
+    val kafkaParams: Map[String, String] = Map(
+      "metadata.broker.list" -> "bigdata-training01.hpsk.com:9092",
+      "auto.offset.reset" -> "largest"
+    )
+    // KAFKA TOPICS
+    // bin/kafka-topics.sh --create --zookeeper bigdata-training01.hpsk.com:2181/kafka --replication-factor 1 --partitions 2 --topic sparkTopic
+    val topics: Set[String] = Set("sparkTopic")
+    // 从KAFKA Topic 采用Direct Approach 方式获取的获取的数据
+    val linesDStream: DStream[String] = KafkaUtils.createDirectStream[
+      String, String, StringDecoder, StringDecoder](
+      ssc, // StreamingContext
+      kafkaParams , // Map[String, String],
+      topics // Set[String]
+    ).map(_._2)
+-3. 测试
+    向TOPIC中放入数据
+$ bin/kafka-console-producer.sh --broker-list bigdata-training01.hpsk.com:9092 --topic sparkTopic         
+
+
+
+在实际的统计分析中，往往需要的是一种实时累加统计，而不是每一批次的统计（最后要实现累加统计的统计的话，需要合并所有批次的结果）
+    是否有API呢？实现累计的统计呢？？？？
+
+
+错误信息：
+java.lang.IllegalArgumentException: requirement failed: The checkpoint directory has not been set. Please set it by StreamingContext.checkpoint().
+    提示：
+        需要设置SparkStreaming检查点目录，目的在于存储每个Key的状态信息，以便防止丢失，通常设置检查点目录为HDFS文件系统
+
+SparkStreaming 高可用性：
+    对于实时流式计算来说，在企业中通常要求7 * 24 小时运行，不会出错，哪怕出错了，重新运行的时候，应该接着以前的状态继续运行，而不是重新开始运行。
+所以针对updateStateByKey来说：
+    -1. 保存上次运行结束时
+        读取Kafka Topic中数据的位置信息offset（处理的TOPIC数据到哪里了）
+    -2. 保存上次运行结束时
+        累计统计状态信息state（以前下次运行继续累加，而不是从零开始）
+    -3. 尤其是Driver，调度程序的，将流式的数据按照时间间隔划分为很多batch
+        可能出现batch未运行完成，进行记录，以便下次继续运行
+    思考：
+        需要将上述的信息设置检查点，实时的进行保存，以便在此运行时读取以前应用的信息
+参考配置：
+    http://spark.apache.org/docs/1.6.1/streaming-programming-guide.html#how-to-configure-checkpointing
+    关键点：
+        - 设置检查点目录
+        - 创建StreamingContext
+            - 第一次运行时，创建新的ssc
+                调用functionToCreateContext
+            - 再次运行时，通过检查点目录读取checkpointdata进行创建ssc
+
+此外，SparkStreaming 1.6.0的时候提供
+      def mapWithState[StateType: ClassTag, MappedType: ClassTag](
+        spec: StateSpec[K, V, StateType, MappedType]
+        ): MapWithStateDStream[K, V, StateType, MappedType]
+    同样是用于实时状态统计，此函数的效率和性能要高于updateStateByKey
+
+
+在实际应重，需要实时统计最近一段时间的数据的状态信息
+    外卖平台：最近二十分钟，大家外卖订单的统计(区域)
+        最近二十分钟各个区域外卖订单数量统计
+    10:00
+        9:40 - 10:00            - 时间范围，其实就是一个窗口
+    10:10 
+        9:50 - 10:10
+    10:30
+        10:10 - 10:30
+
+每次统计的是一个窗口的数据，窗口的大小要确定
+    窗口window interval 必须是 batch interval 的整数倍
+
+
+
+SparkStreaming：
+    DStream 重要函数/方法
+        kafka: 
+            pull方式拉去数据
+        updateStateByKey
+            实时累加状态统计
+        checkpoint  
+            保持Driver相关信息
+        windows
+            窗口统计
+        transform 
+            rdd -> rdd :  DStream 
+        foreachRDD:
+            output 
+
+SparkStreaming 在企业的开发中使用的语言最多的为JAVA而不是SCALA，实时应用要与JAVA应用系统关联，绝不能使用Python，运行非常非常的慢。
+

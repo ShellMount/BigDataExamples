@@ -1,0 +1,445 @@
+
+
+学习Spark基础知识
+    - JAVA SE基础
+    - SCALA 基础
+    - HADOOP 2.x
+        HDFS：分布式文件系统，存储数据，以文件形式存储
+            Spark可以从HDFS上读取数据进行处理
+        MapReduce：并行计算编程模型
+            数据处理的思想：分而治之
+        YARN：分布式集群资源管理和任务调度的框架
+            Spark Application运行在YARN上，国内：阿里还是百度
+    - HIVE
+        SQL on HADOOP 
+        给用户提供一个接口，只需要编写SQL语句即可，HIVE将SQL转换为MapReduce程序，读取HDFS上的数据并且运行在YARN上。
+            在企业中使用SPARK框架来说，70%以上都是使用SparkSQL这个模块进行数据分析处理
+        表的数据文件存储格式：列式存储
+
+MapReduce:
+    执行速度很慢，尤其针对复杂的数据分析，比如机器学习和迭代计算
+    原因在于：将分析的中间结果数据写入磁盘中，并且后续进行分析是，从磁盘继续读取（与磁盘打交道）
+    - map task   -- output  -> disk 
+        分
+    - reduce task    -- output  -> hdfs（disk）
+        合
+
+Spark：
+    类似于HADOOP MAPREDUCE分布式计算框架：分析处理海量数据
+    基于内存的分布式计算框架
+        数据存放和读取来源于内存而不是磁盘
+        将数据处理的中间结果存储到内存中 memory
+最明显的一个比较
+    MapReduce与Spark框架数据处理来说，对100TB数据进行排序
+        Spark:
+            机器：使用 1/10 不到
+            时间：1/3 不到
+
+通常所说的Spark框架，其实暗指SparkCore模块，也是核心
+
+最重要的一点就是：
+    Spark框架来说，所有的模块都是JAR包
+    对于开发使用来说，非常的简单：
+        调用JAR包中的API，进行编程数据分析处理，将程序打包运行在YARN上即可。
+
+Spark 历史来源：
+    起源于加州大学伯克利分校AMPLab实验室
+    AMP：
+        A->算法  M->机器学习   P->人类
+        创建一个公司DataBricks（金砖）：从数据中获取黄金（价值）
+
+
+官方定义：
+    Apache Spark™ is a fast and general engine for large-scale data processing.
+    - 引擎Engine(框架)
+        - 大规模数据集处理
+        - fast快速
+        - general通用
+    - 参考比较：
+        相对于HADOOP 生态系统框架来说（对海量数据）
+
+
+Spark框架 最重要的一点，就是一个对数据分析处理的抽象
+    - RDD：Resilient Distributed Datasets
+        数据结构：集合，类比于SCALA语言中集合类的List
+        将要处理的数据封装放到一个集合RDD中，然后调用集合RDD中的函数(高阶函数)进行处理分析。
+    - 处理数据三步走策略
+        第一步、读取数据
+            将要处理的额数据转换为RDD(内存，将数据放在集合中)
+        第二步、分析数据
+            调用RDD中的高阶函数，处理后的数据结构为RDD
+            RDD#func -> RDD 
+        第三步、输出数据
+            将处理数据的结果RDD输出到外部存储系统（HDFS或者数据库中）
+            RDD#func -> 不是RDD
+        
+Runs Everywhere
+    思考：Spark就是处理数据的框架
+        第一个问题：处理的数据在哪里？？？？
+        第二个问题：处理数据的程序运行的在哪里？？？？
+    - 要处理的数据来源于很多的地方
+        hdfs\hive\hbase\mysql(oracle\mssql\db2)\json\parquet
+    - Spark Application 程序运行在很多地方
+        - 本地模式local mode
+            类似于MapReduce程序运行本地一样，启动一个JVM运行
+        - 集群模式cluster mode
+            - yarn：hadoop框架中的一个模块
+            - mesos: Apache顶级项目，与YARN功能类似，用于集群管理和任务的调度（原生态的支持，最早的支持）
+            - standalone cluster：Spark框架本身自带的集群资源管理框架，与YARN类似
+        - cloud：可以运行的云端 EC2
+
+Tachyon：
+    与HDFS差不多，都是分布式文件系统
+    HDFS：将数据分布式的存储在磁盘中（各个机器的硬盘上）
+    Tachyon：将数据分布式的存储在内存中（各个机器的内存上）
+
+Spark 学习资料
+    - 官方文档
+        http://spark.apache.org/docs/1.6.1/
+    - Spark 源码
+        https://github.com/apache/spark
+        https://github.com/apache/spark/releases
+        阅读源码的话，借助于使用IDE(IDEA)
+        - 源码关联到IDE
+            IDEA（开发Spark程序，关联源码）
+        - Import IDEA
+            将源码导入到IDEA中
+            依赖包，Maven仓库
+    - 官方博客
+        https://databricks.com/blog
+    - 英文书籍
+        国外的书：详细，理解透彻
+        中文书籍参考
+
+
+Spark 安装
+    与HADOOP差不多，直接使用官方提供的编译distribution包
+    采用源码编译的方式安装
+        - 下载源码
+        https://github.com/apache/spark/archive/v1.6.1.zip
+        https://github.com/apache/spark/archive/v1.6.1.tar.gz
+        - 配置编译
+    编译步骤：
+        编译Spark，依赖于HADOOP：
+            - 处理的数据通常存储在HDFS
+            - SPARK程序运行在YARN（阿里巴巴方式）
+            - 处理的数据存储在HIVE表中
+        -1, 环境准备
+            JDK、SCALA、MAVEN
+            Java 7+  Scala 2.10  Maven 3.3.3+
+        -2, 解压源码，配置
+            MAVEN相关
+            -i, MAVEN解压以后，配置conf/setting.xml，仓库镜像地址
+                MVAEN编译的时候，自动连接互联网下载依赖JAR包
+                <mirror>
+                    <id>aliyun</id>
+                    <mirrorOf>central</mirrorOf>
+                    <name>aliyun repository</name>
+                    <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+                </mirror>
+                <mirror> 
+                    <id>cloudera</id>
+                    <mirrorOf>central</mirrorOf>
+                    <name>cloudera repository</name>
+                    <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+                </mirror>
+            -ii, 修改系统的DNS
+                $ sudo vim /etc/resolv.conf 
+                    nameserver 8.8.8.8
+                    nameserver 8.8.4.4
+            -iii, 使用存在仓库
+                $ cd /home/hpsk 
+                $ mkdir -p .m2  (第一次安装MAMVN,需要创建)
+                $ cd .m2 
+                $ tar -zxf repository-1.6.1.tar.gz
+            -iv, 解压spark源码
+                - 修改make-distribution.sh文件
+                    VERSION=1.6.1
+                    SCALA_VERSION=2.10.4
+                    SPARK_HADOOP_VERSION=2.5.0-cdh5.3.6
+                    SPARK_HIVE=1
+                - 修改根目录下pom.xml
+                    <scala.version>2.10.4</scala.version>
+        -3, 执行编译命令
+            - MAVEN方式
+            打包方式make-distribution
+    ./make-distribution.sh --tgz -Phadoop-2.4 -Dhadoop.version=2.5.0-cdh5.3.6 -Pyarn -Phive -Phive-thriftserver
+            - SBT方式
+                JAVA：MAVEN管理工程
+                SCALA：SBT管理工程，也是可以使用MAVEN
+
+Spark 框架编译安装包目录结构与HADOOP 2.x安装包目录结构类似
+    /bin: 执行脚本命令比如spark-shell 
+    /sbin：服务管理脚本命令
+    /conf: 配置文件目录，主要的配置文件spark-env.sh spark-default.conf
+    /data: 测试数据
+    /examples: 框架自带的Examples，尤其机器学习很多例子
+    /lib: Spark框架编译后的JAR包
+        类似于HADOOP中${HADOOP_HOME}/share/hadoop
+            common/、hdfs/、mapreduce/、yarn/
+- Spark 框架核心JAR包
+datanucleus-api-jdo-3.2.6.jar
+datanucleus-core-3.2.10.jar
+datanucleus-rdbms-3.2.9.jar
+- Spark 运行在YARN上依赖JAR包
+spark-1.6.1-yarn-shuffle.jar
+- Spark与HADOOP集成JAR包
+spark-assembly-1.6.1-hadoop2.5.0-cdh5.3.6.jar
+- Example JAR包
+spark-examples-1.6.1-hadoop2.5.0-cdh5.3.6.jar
+备注：
+    在Spark 2.x中JAR包进行模块化的
+
+
+Spark 框架对于开发者，人性化，智能化
+    - 思想
+        对数据分析处理的：RDD
+    - 编程
+        调用RDD高阶函数
+        链式编程（SCALA语言本身特性 函数式编程）
+    - 测试
+        spark-shell：基于scala语言的交互式命令行
+        pyspark sparkR
+        IDE：IDEA开发，直接在Windows下可以直接本地测试
+            不需要虚拟机也可以进行本次测试开发
+    - 监控
+        针对每个应用都有一个监控短裤 4040，功能非常强大（1.4.0）
+    
+Spark Local Mode安装
+    -1. 安装软件框架
+        JDK、SCALA、HDFS(伪分布式环境，启动NameNode和DataNode)
+    -2. 配置SPARK环境脚本
+        $ cd ${SPARK_HOME}/conf 
+        $ mv spark-env.sh.template spark-env.sh 
+        增加配置：
+            JAVA_HOME=/opt/modules/jdk1.7.0_67
+            SCALA_HOME=/opt/modules/scala-2.10.4
+            HADOOP_CONF_DIR=/opt/cdh-5.3.6/hadoop-2.5.0-cdh5.3.6/etc/hadoop
+    -3. 启动spark-shell 
+        在local mode下 
+        $ bin/spark-shell 
+17/05/19 02:10:05 INFO repl.SparkILoop: Created spark context..
+Spark context available as sc.
+    意思：在启动spark-shell命令行的时候，创建一个SparkContext的实例，名称为sc，使用sc进行读取要处理的数据，将数据封装到（读取到）RDD集合中。
+
+Spark程序处理流程
+    -1. 数据的读取（输入）
+        val rdd = sc.textFile("") //....
+    -2. 数据的处理（分析）
+        rdd.#   #: 表示的函数为Transformantion，将一个RDD转换为另外RDD
+    -3. 数据的输出（输出）
+        rdd.#   #: 表示的函数为Action，将一个RDD转换为其他形式， 触发一个Job执行
+
+bin/spark-shell 
+    默认情况下，表示运行在local mode，在本地启动一个JVM Process，在里面运行一些线程进行数据处理，每个线程运行一个Task任务。
+    思考：每个JVM Process中运行多少个线程Thread呢？？
+对于本地模式来说，运行多少个Thread决定同事运行多少Task。
+    -1. bin/spark-sell --master local 
+        在JVM中运行一个Thread
+    -2. bin/spark-sell --master local[K] 
+        K: 表示运行K个Thread
+    -3. bin/spark-sell --master local[*] 
+        *: 表示的是当前机器CPU CORE为多少就运行多少个Thread。
+通常情况下：
+    $ bin/spark-shell --master local[2]
+        表明运行2个Thread进行数据处理，也就是说可以同事有两个Task进行数据处理，相当并行计算。
+
+
+Spark Application与MapReduce Application 有一点不一样
+    spark-shell 
+        运行的是一个Spark Application在本地模式下
+        在一个SparkApplication下会有很多Job
+    对于MapReduce程序运行来说，
+        一个Application就是一个Job
+    重要一点：
+        无论是MR还是Spark对数据分析处理，都是分而治之的思想，处理每一份数据，每个数据都是一个Task进行处理。
+        MR： MapTask和ReduceTask -> JVM Process 
+        Spark: Task -> Thread 
+    每个Task运行的时候，仅仅需要一个CPU CORE即可。
+
+
+使用IDEA创建Maven工程
+    <groupId>com.bigdata.hpsk</groupId>
+    <artifactId>spark-study_2.10</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    工程名为：learning-spark 
+修改pom.xml，增加SparkCore和HDFS Client依赖
+        <!-- Spark Core -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.10</artifactId>
+            <version>${spark.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- HDFS Client -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>compile</scope>
+        </dependency>
+增加MAVEN仓库地址
+    <repositories>
+        <repository>
+            <id>aliyun</id>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>cloudera</id>
+            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+        </repository>
+        <repository>
+            <id>jboss</id>
+            <url>http://repository.jboss.com/nexus/content/groups/public</url>
+        </repository>
+    </repositories>
+
+基于IDEA工具对WordCount程序进行深入分析
+    对统计的词频 进行降序排序，并且获取出现次数最多的前三个单词
+
+发现：
+    reduceByKey
+    sortByKey
+    都是针对RDD[(Key, Value)] 类型为二元组也就是(Key, Value)
+
+如何导入源码至IDEA工具
+    - 下载源码并解压
+    - 安装配置MAVEN
+        关键：使用给定的MAVEN REPO（包含很多依赖JAR包）
+    - IDEA 导入
+        - 勾选 [MAVEN PROJECT]
+        - 设置工程使用的MAVEN环境(HOME\SETTINGS\RRSPO)
+
+=======================================================
+Spark Standalone
+    Spark 框架自带的分布式集群资源管理和任务调度框架 类似YARN
+    分布式架构：主从架构                  YARN 
+        - 主节点：
+            Master                      ResourceManager
+            负责集群资源管理
+            配置端口：
+            SPARK_MASTER_PORT=7077            8032
+            SPARK_MASTER_WEBUI_PORT=8080      8088
+        - 从节点
+            Workers                     NodeManagers
+            负责当前节点资源的管理
+对于计算框架来说，需要资源
+    - CPU CORE
+        计算
+    - Memory
+        存储
+
+架构有一点与YARN不一样
+    对于YARN来说：
+        每天机器上只能启动一个NodeManager，管理这个节点的资源
+    对于Standalone来说：
+        每台机器上可以运行多个Workder进程，进行资源管理
+
+配置Spark Standalone Cluster 
+-1. 配置${SPARK_HOME}/conf目录下的文件
+    - spark-env.sh 
+        SPARK_MASTER_IP=bigdata-training01.hpsk.com
+        SPARK_MASTER_PORT=7077
+        SPARK_MASTER_WEBUI_PORT=8080
+        SPARK_WORKER_CORES=2
+        SPARK_WORKER_MEMORY=2g
+        SPARK_WORKER_PORT=7078
+        SPARK_WORKER_WEBUI_PORT=8081
+        SPARK_WORKER_INSTANCES=1
+    - slaves
+        bigdata-training01.hpsk.com
+-2. 启动服务
+    Master启动：
+        必须在Master节点机器上启动
+        $ sbin/start-master.sh 
+    Workers启动：
+        必须在Master节点机器上启动
+        启动之前，需要配置Master节点到所有Slaves节点的SSH无密钥登录
+            由于在Master节点通过远程SSH登录启动各个节点上的Worker进程
+                $ ssh-keygen -t rsa
+                $ ssh-copy-id hpsk@bigdata-training01.hpsk.com
+        $ sbin/start-slaves.sh 
+-3. 监控测试
+    -3.1 WEB UI 
+        http://master-ip:8080/
+    -3.2 运行spark-shell 
+        运行spark-shell在SparkStandalone集群模式下
+        $ bin/spark-shell --master spark://bigdata-training01.hpsk.com:7077
+-4. Spark Application 运行在Cluster模式下
+    以运行在SparkStandaloneCluster为例
+    组成部分：
+    - Driver Program
+        类似于MapReduce运行在YARN上，每个应用都有一个AppMaster
+        管理整个应用的运行（调度）
+        SparkContext 创建在此处
+            - 读取要处理的数据
+            - 调度整个Application中所有的Job
+        默认情况下：Driver Program运行在提交Application的客户端，而不是集群的某台机器上。
+        进程名：SparkSubmit
+    - Executors
+        JVM Process，运行在Worker节点上，类似于MapReduce中MapTask和ReduceTask运行在NodeManager上
+        -i, 运行Task 进行数据处理，以Thread方式运行
+        -ii, 缓存数据：rdd.cache，其实就是讲数据放到Executor内存中
+        进程名：CoarseGrainedExecutorBackend
+
+开发测试：
+    bin/spark-shell 
+    IDEA工具开发和本地测试
+项目生产
+    最终Spark Application的运行与MapReduce程序运行是一样的，需要将程序打包进行运行。
+    开发就需要IDE工具，快速的开发，也能进行本地测试
+如何提交应用程序？？？
+    与MapReduce Application运行基本一样
+        bin/yarn jar xx.jar class args-01 args-02
+    在Spark中有一个命令，提交应用（local mode和cluaster mode）
+        bin/spark-submit 
+        其实bin/spark-shell底层就是运行spark-submit提交应用
+
+$ bin/spark-submit 
+Usage: spark-submit [options] <app jar | python file> [app arguments]
+Usage: spark-submit --kill [submission ID] --master [spark://...]
+Usage: spark-submit --status [submission ID] --master [spark://...]
+
+预先补充知识：
+    Spark分析数据：将要处理的数据封装到 数据结构 中-> 
+        RDD 集合：内存中（理想），分开放->分区
+    假设要处理的数据为5GB，存储在HDFS上，比如1000blocks
+        默认情况下 blocks  ->  partition  -> Task 
+    总结：
+        Spark处理数据思想：
+            将要处理的数据封装到一个集合RDD中，分成很多份（分区），每一份（每一分区）数据被一个Task进行处理。
+
+Spark Application 
+    Job-01
+        Stage-01
+            Task-01
+            Task-02
+            ......
+        Stage-02
+        Stage-03
+        ......
+    Job-02
+    Job-03
+    ......
+
+-1, 一个Application包含多个Job
+    RDD#Func 
+        当RDD调用的函数返回值不是RDD的时候，就会触发一个Job
+    Func:Action
+-2, 一个Job中包含很多Stage，Stage之间是依赖关系
+    后面的Stage处理的数据依赖于前面Stage处理完成的额数据
+    Stage里面都是RDD进行转换操作
+-3, 一个Stage中有很多Task
+    在一个Stage中所有的Task来说，处理的数据逻辑相同（代码相同），仅仅是处理的数据不同。
+    一个Stage中有多少Task，取决于处理数据RDD的分区数目，每个分区的数据由一个Task任务进行处理。
+
+
+对一号店用户访问行为数据进行分析
+    PV(浏览量)和UV(访客数)统计
+    - MapReuce程序
+    - HiveQL分析 
+    - SparkCore分析
+    思考：
+        使用MapReduce还是SparkCore实现WordCount程序，如何使用SQL完成？？？？其实就是对Word进行分组，在SQL中使用group by即可。
+
+

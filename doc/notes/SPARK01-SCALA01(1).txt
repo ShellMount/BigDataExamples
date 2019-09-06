@@ -1,0 +1,381 @@
+
+大数据框架（处理海量/流式数据）
+    - 以HADOOP 2.x为体系的大数据生态系统处理框架
+        离线数据分析，分析的数据为N+1天数据
+        - MapReduce
+            并行计算框架，分而治之
+            - HDFS（存储数据）
+            - YARN（分布式的集群资源管理和任务调度框架）
+            问题：
+                磁盘，依赖性太高（IO读写）
+                Shuffle过程，map将数据写入到本地磁盘，reduce通过网络的方式到各个map task所运行的机器中拷贝自己要处理的数据。
+        - Hive
+            基于SQL处理框架，将SQL转换为MapReduce，处理存储在HDFS上的数据，并且运行在YARN上。
+        - SQOOP
+            桥梁：RDBMS(关系型数据库) - HDFS/HIVE 导入导出
+        - HBASE
+            大数据分布式数据库
+                与MapReduce进行集成，可以读取数据进行分析处理，也可将分析结果存储到HBase表中。
+    - 以Storm为体系实时流式数据处理框架
+        数据实时产生 -> 进行实时处理
+        应用场景：
+            实时交通监控
+            电商营业额：  双十一
+    - 以Spark为体系的大数据处理框架
+        内存
+            将处理数据过程中的 中间结果数据 存放到内存中
+        核心编程（基础编程）
+            SparkCore
+            SparkSQL
+            SparkStreaming
+        高级编程
+            机器学习/深度学习/人工智能
+            SparkGraphX
+            SparkMLlib
+            Spark on R
+
+Spark 课程计划
+    Spark 数据分析
+        - SCALA 编程（一）
+        - SCALA 编程（二）
+        - SparkCore（一）
+        - SparkCore（二）
+        - SparkSQL
+            直接从HIVE/RDBMS/JSON/CSV/TSV格式的数据
+            Python开发
+        - Kafka + SparkStreaming
+            数据来源Kafka
+            使用JAVA开发的
+        - 基于Java 和Python API Spark 编程
+学习建议：
+    - 类比法
+        SCALA：JAVA
+        CORE：MapReduce
+        SQL：HIVE
+        Streaming：CORE，其实对CORE API封装
+    - 练、记、思
+        - 听：认真、理解
+        - 练：自己去敲代码，千万不要拷贝代码
+        - 记：笔记或者记录
+        - 思：为什么这样，好处在哪里，性能
+
+SCALA语言诞生
+    两个大数据数量框架，而且非常非常重要
+    - Spark 
+        分布式海量数据处理框架
+    - Kafka 
+        分布式流平台，基于消息的发布订阅队列框架
+        存储数据
+    SCALA 函数式编程语言，编程来说很简单
+        调用的都是函数，链式编程
+        Java 8中提供新特性：
+            Lambda表达式（函数编程）
+            Stream编程
+    比如：
+        JAVA：SCALA 
+            代码量：10:1
+
+SCALA语言是基于JVM之上的语言
+    将字节码文件（*.class)运行在JVM中
+    *.java 
+        编译 *.class   ->  JVM 
+    *.scala 
+        编译 *.class   - JVM 
+
+
+IDE集成开发工具
+    IDEA 对SCALA支持很好
+
+
+Scala 
+    Object-Oriented Meets Functional
+    - 官网：
+        https://www.scala-lang.org/
+    - 官方教程：Twitter
+        Scala 课堂!
+        https://twitter.github.io/scala_school/zh_cn/
+    - 版本
+        2.10.x版本，此处为2.10.4
+        备注说明：
+            - Spark 1.6.x版本 推荐的 Scala 2.10.x
+            - Spark 2.x版本 推荐的 Scala 2.11.x版本
+
+
+面向对象编程OOP
+    与JAVA语言不一样
+        - interface 接口
+            trait
+        - 静态类/静态方法
+            object - main
+ class PersonDemo{
+    main
+ }      
+ object PersonDemo{
+     main
+ }     
+
+
+SCALA语言提供
+    类似于Shell编程的交互式命令行
+    scala 
+        使得spark开发测试非常的简单
+    Scala Shell
+        REPL
+            Read -> Evaluate -> Print -> Loop 
+如果大家学习SCALA语言，再去学习Python语言非常简单。
+
+
+
+SCALA 环境安装
+    -1, JAVA环境安装
+        JAVA_HOME
+        PATH
+    -2, SCALA环境安装
+        SCALA_HOME
+        PATH 
+    -3, IDEA 安装
+        Windows下：直接点击运行*.ext文件
+    -4, IDEA设置
+        scala插件：从本地硬盘进行安装和在线安装（以Python为例）
+        字体（IDE和Codeing）和字符编码
+        创建ScalaProject
+            设置JAVA安装
+            设置SCALA安装
+
+作业：
+    在Linux下安装SCALA环境（包括IDEA 集成开发工具环境安装和配置）
+        截图和笔记
+
+===========================================================
+SCALA中变量的声明
+    - val 
+        value 简写, 表示的意思为 值
+        val name = "zhangsan"
+        不可变
+    在SCALA语言中，Variable Type Inference, 自动推断
+    当然也可以指定变量的类型，类型紧跟变量名后面，并使用分号隔开
+        val xx: String = "xxx"
+    如果改变val声明变量的值，出现以下错误：
+scala> name = "wangwu"
+<console>:8: error: reassignment to val
+       name = "wangwu"
+    - var 
+        variable 简写，表示的变量，可以改变的值
+scala> var price = 12.98
+price: Double = 12.98
+
+scala> price = 18.88
+price: Double = 18.88
+    - 说明：
+        在SCALA中 官方推荐大家尽量的去使用val 定义变量
+        在后面Spark数据分析编程中，会发现基本上都是用val定义变量
+当声明变量的时候指定的类型与实际值得类型不一致，如些错误：
+scala> var tel: String = 1247639556
+<console>:7: error: type mismatch;
+ found   : Int(1247639556)
+ required: String
+       var tel: String = 1247639556
+    - 使用下划线 _ 进行变量值得初始化
+scala> var price: Double = _
+price: Double = 0.0
+
+scala> var name: String = _
+name: String = null
+
+scala> var age: Int = _
+age: Int = 0
+
+    - 在SCALA Shell命令行中，如果执行的代码 产生值，没有赋值给变量，则会自动将值赋给默认生成的变量名,一般以res开头，安装顺序添加自动编号，并且变量为val方式声明。
+scala> 1 + 3
+res1: Int = 4
+    - SCALA中表达式的返回值就是 最后一行代码的执行结果
+scala> val a = {
+     |   println("yyy")
+     |   "zhangsan"
+     | }
+yyy
+a: String = zhangsan
+
+
+如何阅读SCALA 语言DOCS
+    - 下载：
+        https://www.scala-lang.org/download/2.10.4.html
+    - 解压
+        ${SCALA_DOCS_HOME}/index.html
+        使用浏览器打开即可
+
+在SCALA中不支持三种操作符：
+    ++ / -- / ?:
+    自增  自减  三目
+
+// JAVA 语法
+if(flage){
+    "good" ;
+}else{
+    "no"  ;
+}
+
+flag ? "good" : "no" 
+
+// SCALA语法
+val str = if(flag) "good" else "no" 
+
+
+在SCALA中声明变量时加上lazy，表示当第一次使用变量值得时候，才进行初始化操作。
+scala> lazy val nu = 100
+nu: Int = <lazy>
+
+scala> print(nu)
+100
+
+
+=======================================================
+IF 判断来说有三种结构
+    -1, IF 
+        if(boolean){
+
+        }
+    -2, IF...ELSE...
+        if(boolean){
+            // TODO true do something
+        }ELSE{
+            // TODO false do something 
+        }
+    -3, IF...ELSE IF...ELSE IF...ELSE
+
+=======================================================
+SCALA中循环
+    - WHILE 循环
+        while loop:
+            先判断后执行
+        do...while loop
+            先执行后判断，至少将会执行一次
+    - FOR 循环
+        - 循环表达式
+            在JAVA中进行FOR循环的时候
+                for(int index =0 ; index ++; index < 10){}
+            int index =0 ; index ++; index < 10
+                表示的是从0到9的十个数字范围
+        - Range：包头不包尾
+scala> Range(0,10)
+scala> Range(1, 10, 2)
+scala> Range(0, 10, 5)
+scala> Range(9, -1, -1)
+        - 两个特殊
+            - to 
+scala> 1 to 10
+scala> 1.to(10)
+            - until
+scala> 1 until 10
+scala> 0.until(10)
+
+
+for(item <- arr){
+    print(item + " ")
+}
+// 类似于JAVA中增强FOR循环
+for(Integer item : arr){
+    print(item + " ")
+}
+
+在JAVA中针对循环来说，常见例子:
+    循环遍历集合中的元素，判断是否包含某个元素，如果包含进行相关操作，并且不再继续循环遍历集合中其他元素。
+    使用 break语句进行实现。
+然而在SCALA中没有break关键字，类似于JAVA中语法使用。
+
+
+=======================================================
+函数 和 方法 区别
+    -1, 方法：
+        相对于OOP 来说
+        类class
+            属性：名词
+            方法：动词，行为，如果一个函数在类中，称函数为方法
+    -2, 函数 
+        不在类中的方法，称为此方法为函数
+    -3, OOP编程中
+        比如JAVA语言来说，方法必须在类中，不能脱离class独立存在
+        但是在FP中，函数可以独立存在，不需要依赖于类class
+    -4, SCALA语言，即使OOP又是FP，所以对象(class)和函数都是一等公民，地位相同，都可以独立存在。
+
+
+scala>   def max(x: Int, y: Int): Int = {
+     |     // x > y 返回 x
+     |     if(x > y) {
+     |       x
+     |     }else{ // 否则 返回 y
+     |       y
+     |     }
+     |   }
+max: (x: Int, y: Int)Int
+
+
+如何确定一个函数：
+    函数：就是将一段代码放在一起，以便后续进行重用。
+    -1, 函数参数
+        (x: Int, y: Int) -> 有两个参数，参数的类型为Int
+        参数个数、参数类型
+    -2, 函数返回值
+        返回值类型
+
+如何表示一个函数：
+    (Int, Int) => Int
+        - 左边：函数的参数（参数个数和参数类型）
+        - 中间：使用 => 分割
+        - 右边：函数的返回（返回值类型）
+    或者：
+    f: (T1, T2) => R  |  f: T => R
+        - T:
+            Type, 类型，表示的是函数的参数类型，此处是泛型
+        - R：
+            Return，表示的是函数的返回值类型，此处是泛型
+
+SCALA中函数的参数为空时，调用的时候可以不加()
+    - 当调用的函数对原对象产生影响的时候，会加上()
+    - 如果不产生影响可以选择不写()
+
+SCALA中作用域
+    -1, scala中默认的作用域是public
+    -2, 使用方式JAVA语言类似
+    -3, 一般情况下使用
+        public: 公共的，任意都可以访问
+        private: 私有的，表示的是当前类的对象（所有）可以访问
+        private[this]:
+            当前对象(实例)可以访问，其他对象(其他类的对象，当前类的其他对象)不能访问
+        private[package]:
+            表示某个包下面的都可以访问，比如private[spark],表示的就是spark包中所有类均可以访问
+
+=======================================================  
+匿名函数  语法规则
+    ([参数名: 参数类型, 参数名: 参数类型, ...]) => 函数体
+scala> (x: Int, y: Int) => x + y
+res0: (Int, Int) => Int = <function2>
+scala> res0(1, 3)
+res1: Int = 4 
+说明： 
+    -1, 函数体如果是 多行的话
+        ([参数名: 参数类型, 参数名: 参数类型, ...]) => {
+            函数体
+        }
+    -2, 没有显示的说明 函数的返回值， 通过函数体 进行推断
+    -3, 功能
+        - 可以将 匿名函数 赋值 给 某个变量/ 函数
+scala> val add = (x: Int, y: Int) => x + y
+add: (Int, Int) => Int = <function2>
+scala> add(2, 3)
+res2: Int = 5     
+
+scala> def addFunc = (x: Int, y: Int) => x + y
+addFunc: (Int, Int) => Int
+        - 将直接定义的匿名函数传入其他函数之中 
+            此时透漏一个信息
+                函数f的参数类型可以为函数g      
+            此时称函数f为高阶函数
+def foreach[U](f: A => U): Unit
+    foreach()函数中的参数f类型为函数 A => U, 函数仅有一个参数，并且返回值为Unit。
+
+
+Spark框架对数据分析
+    将要处理分析的数据读取放入到一个"集合"中,然后调用集合中的函数进行处理数据，这些函数都是高阶函数，也就是意味着函数的参数类型为函数（说白了处理数据就是编写匿名函数）。
+
+

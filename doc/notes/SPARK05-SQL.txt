@@ -1,0 +1,504 @@
+
+前言：
+    -1, Spark 框架在企业中的使用非常广泛和Spark发展很快（有很多新功能特性），在很大程度上归功于SparkSQL模块
+    -2, 在企业中使用HADOOP大数据框架进行数据分析的时候
+        其实编写MapReduce程序并不多，反而使用Hive的更多
+    -3, 提供编程语言大众化【情人】工具
+        SQL：传统数据分析和挖掘更多的是编写SQL语句
+    -4, 类似
+        SparkCore           --          Hadoop MapReduce 
+          RDD                              (key, value)
+           |                                    |
+        Shark/SparkSQL                        Hive 
+
+更好的学习使用SparkSQL
+    - Hive
+    - SparkCore
+    - 提醒一点
+        深入使用和学习的话，必须阅读源码，核心的几个源代码
+            导入源码/关联源码
+
+Spark Framework 
+    三个基础模块：都是对要处理的数据进行封装，然后调用API进行处理
+    - SparkCore 
+        批处理：RDD， 最基础的数据结构
+        HDFS/HBase   - 最常见的读取数据的地方
+    - SparkSQL 
+        交互式处理：DataFrame/Dataset = RDD + schema(模式)
+        最强大的一点：
+            External DataSources API 
+                读取存储在任何地方的数据，任何格式的数据
+        HIVE/HDFS/JSON/CSV/TSV/JDBC/......
+    - SparkSteaming
+        流式处理：DStream(离散的流)= RDDs
+        Kafka/Flume
+    高级数据分析模块
+        - GraphX
+            图形计算：基于RDD，现在也出现基于DataFrame
+        - MLlib
+            机器学习库：两类API，RDD(mllib)和DataFrame(ml)
+
+Hive:   
+    - SQL on HADOOP 框架家族中最基础最根本的框架。
+    - 大数据仓库：
+        给用户提供编写SQL，将SQL转换为MapReduce程序，读取HDFS上的数据运行在YARN的集群上。
+    - Hive(SQL) -> MapReduce -> HDFS/YARN 
+Shark 
+    - Hive(SQL0) -> Spark -> HDFS/YARN 
+    - 思想：
+        Hive的底层变为SparkCore：RDD的API在调用，将SQL转换为Spark程序
+    - 读取Hive表中的数据，将SQL转换为SparkCore的RDD操作，运行在YARN上。
+    - SparkSQL前身就是Shark 。
+    - 思考：
+        为什么Shark没有，被SparkSQL取代了呢？？？？
+        - Shark模块属于Spark框架中的一个模块，将Hive的源代码拿来进行修改的，修改部分是：物理计划相关源码
+                将SQL转换为MapReduce程序
+            源码修改
+                将SQL转换为SparkCore的RDD操作
+        - Shark源码依赖于两部分：
+            Hive的源码、Spark源码
+            - SparkCore 版本升级的时候 - 性能好的时候， Shark需要升级
+            - Hive 版本升级的时候，Shark也需要升级
+        - 整个Shark框架更多的时候在进行维护操作，运维
+    - 重用Hive部分的源代码
+        SQL -> 解析  -> 逻辑计划  -> 物理计划
+SparkSQL 
+    从Spark 1.0开始
+    引擎Catalyst：SQL -> 解析  -> 逻辑计划
+
+将原来的Shark项目交给Hive框架管理
+    Hive底层执行引擎支持三类
+    - MapReduce 
+        最基础的最原始的
+    - Spark  - 2.x 以后推荐引擎
+        Hive on Spark: Getting Started
+        https://cwiki.apache.org/confluence/display/Hive/Hive+on+Spark%3A+Getting+Started
+    - Tez   - 2.x 以后推荐引擎
+        DAG 执行计划
+        Hortonworks开源SQL框架
+
+
+此时的SparkSQL功能非常的强大（Spark 1.3为正式版本）
+    提供数据分析方式，不仅仅是SQL语句
+    通过SQLContext读取外部数据源的数据，封装为DataFrame
+    - SQL 
+        HiveQL基本全部支持
+        val df = sqlContext.sql("")  // 处理Hive表中的数据
+        df.show()
+    - DSL 
+        就是调用DataFrame API 
+        val df = sqlContext.read.table("emp").group("deptno").count.sort("count", desc)
+        df.show()
+
+SparkSQL 相关的MAVEN依赖包
+        <!-- Spark SQL -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.10</artifactId>
+            <version>${spark.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive_2.10</artifactId>
+            <version>${spark.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spark-project.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <version>0.13.1</version>
+            <scope>compile</scope>
+        </dependency>
+
+
+在SparkSQL中DataFrame中的每一条数据都是Row，当做一个数组或者一个集合Array，里面有很多字段，每个字段都有类型和值,获取数据的方式有很多种：
+    - 下标获取：row(0)
+    - 转换数据类型：row.getLong(1)
+    - 类似list方式row.get(2)
+
+在启动spark-shell命令行，创建两个实例对象
+    - SparkContext
+17/05/21 03:56:44 INFO repl.SparkILoop: Created spark context..
+Spark context available as sc.
+        实例名：sc
+    - SQLContext
+17/05/21 03:57:10 INFO repl.SparkILoop: Created sql context (with Hive support)..
+SQL context available as sqlContext.
+        实例名称：sqlContext 
+
+
+大数据分析师
+    主要以SQL为主，进行数据分析
+    - HIVE 
+        SQL
+    - Spark 
+        SparkSQL：
+        - SQL
+        - DSL：DataFrame API -> DataFrame 来源于Python中
+        PySpark
+
+
+SparkSQL来说，来源于Hive/Shark,所以Hive中好的东西，全部继承过来
+    在Hive中可以将Hive 作为一个服务进行启动（类似MySQL Server）
+    以便Client去连接服务ThriftServer/HiveServer2
+
+
+SparkSQL 如何数据处理：
+    - SQL 
+        继承自HiveQL,将要处理的放在表中（Hive表，注册临时表）
+        sqlContext.sql("")
+    - DSL
+        DataFrame API，将要处理的数据封装到DataFrame 
+        sqlContext.read
+            .table()/json()/text()/paruet()/jdbc()  // load 
+            .select()/group().agg()/filter()/join()   // process
+            .write().json()/text()/jdbc()           // save
+    - 读取数据的两种重要来源
+        - 文件
+            text/json/parquet/orc/csv/tsv -> DataFrame 
+        - 表
+            hive/rdbms(mysql,oracle,mssql,postgresql,db2)/hbase
+
+SparkSQL中几个重要类
+    SQLContext
+        读取数据read(): DataFrameReader
+    DataFrame
+        API
+        write(): DataFrameWriter
+    无论使用SQL还是DSL都会使用到函数，SparkSQL自带很多函数
+        org.apache.spark.sql.functions
+ * @groupname udf_funcs UDF functions
+ * @groupname agg_funcs Aggregate functions
+ * @groupname datetime_funcs Date time functions
+ * @groupname sort_funcs Sorting functions
+ * @groupname normal_funcs Non-aggregate functions
+ * @groupname math_funcs Math functions
+ * @groupname misc_funcs Misc functions
+ * @groupname window_funcs Window functions
+ * @groupname string_funcs String functions
+ * @groupname collection_funcs Collection functions
+ * @groupname Ungrouped Support functions for DataFrames
+
+
+ SparkSQL前世今生
+    Hive(MapReduce) -> Hive(Spark):Shark -> SparkSQL 
+    SparkSQL就是为了处理Hive表中的数据
+        与Hive天然无缝集成
+SparkSQL集成Hive安装配置：
+    SparkSQL读取Hive表中的数据，Hive的表的信息schema存储在MetaStore中，做一些配置
+    -1, 编译Spark源码时，显示指定与Hive集成，并且提供TriftServer
+./make-distribution.sh --tgz -Phadoop-2.4 -Dhadoop.version=2.5.0-cdh5.3.6 -Pyarn -Phive -Phive-thriftserver
+    -2, 将Hive配置文件hive-site.xml添加到${SPARK_HOME}/conf 
+$ cd /opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/conf 
+$ ln -s /opt/cdh-5.3.6/hive-0.13.1-cdh5.3.6/conf/hive-site.xml hive-site.xml
+    由于MetaStore是依赖于外部的数据库（默认推荐MySQL，所以连接数据库
+    时需要驱动包，在运行Spark Application时需将驱动包放入到CLASSPATH下面
+$ cd /opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/
+$ mkdir externalJars/
+$ cp /opt/cdh-5.3.6/hive-0.13.1-cdh5.3.6/lib/mysql-connector-java-5.1.27-bin.jar externalJars/
+
+Spark 应用如何使用第三方JAR包，在应用中加载（放到CLASSPATH）：
+    方式一：--jars 
+        运行应用时，通过--jars 可选项添加jar包
+bin/spark-shell \
+--master local[2] \
+--jars /opt/cdh-5.3.6/spark-1.6.1-bin-2.5.0-cdh5.3.6/externalJars/mysql-connector-java-5.1.27-bin.jar
+    方式二：设置SPARK_CLASSPATH环境变量
+        - 在运行的Spark Application脚本文件  - 针对某个应用
+        - 在spark-env.sh 中设置     - 针对所有的应用
+
+注意点：   
+    Application on YARN Cluster Mode --jars and --file option of the spark-submit commond
+    表示的是：如果SparkSQL应用运行在Hadoop YARN集群环境的Cluster Deploy Mode的话，
+        - 配置文件，使用 --file 指定
+        - 依赖驱动jar包，使用--jars 指定
+
+
+回顾一下：
+Hive框架在开发的时候，如何进行的
+    - 开发测试
+        ${HIVE_HOME}/bin/hive 
+            交互式命令行，直接编写SQL语句，分号结束，回车运行，类似MySQL数据提供的命令行或者工具
+    - 部署运行
+        运行脚本
+            -i, 指定SQL文件
+                将SQL语句写入一个sql文件中
+                ${HIVE_HOME}/bin/hive -f xx.sql 
+            -ii, 指定SQL语句
+                {HIVE_HOME}/bin/hive -e "SELECT...FROM..."
+思考： 
+    SparkSQL中有没有此功能呢？？？
+    如果有的话，对于我们来说，是不是非常的方便，尤其将Hive的SQL迁移到SparkSQL运行的时候
+        $ bin/spark-sql --master local[2]
+
+命令spark-sql使用说明：
+$ bin/spark-sql --help
+Usage: ./bin/spark-sql [options] [cli option]
+CLI options:
+ -d,--define <key=value>          Variable subsitution to apply to hive
+                                  commands. e.g. -d A=B or --define A=B
+    --database <databasename>     Specify the database to use
+ -e <quoted-query-string>         SQL from command line
+ -f <filename>                    SQL from files
+ -H,--help                        Print help information
+    --hiveconf <property=value>   Use value for given property
+    --hivevar <key=value>         Variable subsitution to apply to hive
+                                  commands. e.g. --hivevar A=B
+ -i <filename>                    Initialization SQL file
+ -S,--silent                      Silent mode in interactive shell
+ -v,--verbose                     Verbose mode (echo executed SQL to the
+                                  console)
+
+如果在企业中进行Hive和SparkSQL数据分析迁移
+    - SQL 
+        bin/spark-shell --master local[2] -e "SELECT e.ename, e.sal, d.dname  FROM emp e JOIN dept d on e.deptno = d.deptno"
+    - File 
+        bin/spark-shell --master local[2] -f emp_join_dept.sql 
+
+SparkSQL 也是一个引擎Catalyst
+    SQL  ->   SparkCore 
+        - 第一步、Logical Plan
+            逻辑计划
+            - Parsing：UnresolvedPlan
+            - Binding & Analyzing： Resolved Plan
+            - Optimizing： Optimized Paln
+        - 第二部、物理计划
+            RDD 操作
+
+plan
+== Parsed Logical Plan ==
+'Project [unresolvedalias(('a.key * (2 + 3))),unresolvedalias('b.value)]
++- 'Join Inner, Some((('a.key = 'b.key) && ('a.key > 3)))
+   :- 'UnresolvedRelation `T`, Some(a)
+   +- 'UnresolvedRelation `T`, Some(b)
+
+== Analyzed Logical Plan ==
+_c0: double, value: string
+Project [(cast(key#135 as double) * cast((2 + 3) as double)) AS _c0#139,value#138]
++- Join Inner, Some(((key#135 = key#137) && (cast(key#135 as double) > cast(3 as double))))
+   :- MetastoreRelation db_hive, t, Some(a)
+   +- MetastoreRelation db_hive, t, Some(b)
+
+== Optimized Logical Plan ==
+Project [(cast(key#135 as double) * 5.0) AS _c0#139,value#138]
++- Join Inner, Some((key#135 = key#137))
+   :- Project [key#135]
+   :  +- Filter (cast(key#135 as double) > 3.0)
+   :     +- MetastoreRelation db_hive, t, Some(a)
+   +- MetastoreRelation db_hive, t, Some(b)
+
+== Physical Plan ==
+Project [(cast(key#135 as double) * 5.0) AS _c0#139,value#138]
++- SortMergeJoin [key#135], [key#137]
+   :- Sort [key#135 ASC], false, 0
+   :  +- TungstenExchange hashpartitioning(key#135,200), None
+   :     +- ConvertToUnsafe
+   :        +- Filter (cast(key#135 as double) > 3.0)
+   :           +- HiveTableScan [key#135], MetastoreRelation db_hive, t, Some(a)
+   +- Sort [key#137 ASC], false, 0
+      +- TungstenExchange hashpartitioning(key#137,200), None
+         +- ConvertToUnsafe
+            +- HiveTableScan [key#137,value#138], MetastoreRelation db_hive, t, Some(b)           
+
+SparkSQL中也继承了Hive中将Hive作为一个服务启动，其他Client连接方式，SparkSQL此功能依赖于HiveServer2，此方式在SparkSQL中启动了一个Spark Application，将此应用作为一个Server，在实际的开发使用较多。
+    ThriftServer：
+        启动一个Spark Application，将其作为服务以供Client链接访问。
+-1. 启动ThriftServer
+$ sbin/start-thriftserver.sh \
+--hiveconf hive.server2.thrift.port=10000 \
+--hiveconf hive.server2.thrift.bind.host=bigdata-training01.hpsk.com \
+--master local[2]
+-2. Client 访问方式
+    - 命令行方式
+        适合于开发测试
+        bin/beeline
+        beeline> !connect jdbc:hive2://bigdata-training01.hpsk.com:10000
+    - jdbc
+        参考HiveServer2的JDBC访问
+        https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Clients
+
+通过测试发现：
+    SparkSQL在处理数据的时候，每个Stage的Task数目太多了，实际开发中要考虑调整参数。
+    调整参数：
+        spark.sql.shuffle.partitions
+
+sbin/start-thriftserver.sh \
+--hiveconf hive.server2.thrift.port=10000 \
+--hiveconf hive.server2.thrift.bind.host=bigdata-training01.hpsk.com \
+--conf spark.sql.shuffle.partitions=5 \
+--master local[2] \
+
+SparkSQL性能优化：
+    http://blog.csdn.net/df_xiao/article/details/50600395
+    要点：
+        - Executor内存GC机制
+        - Shuffle Partitions 
+
+
+从Spark1.3开始(1.4正式)
+    在SparkSQL中提供了一整套DataSourceAPI，依据此开发，SparkSQL就可以读取任何地方的数据：
+        sqlContext.read.load("")
+        dataframe.write.save("")
+    比如针对HBase数据库中表的数据访问
+        sqlContext.read.hbase("")
+        dataframe.write.hbase("")
+
+
+虽然说Spark支持多语言
+    SCALA、JAVA、Python及R语言
+最最通用的语言还是SCALA语言，Python语言对RDD/DStream操作很慢很慢，所以企业中使用Python语言开发Spark在SparkSQL中，基于DataFrame而言。
+    基于Python语言的Spark开发称为PySpark。
+
+
+SparkSQL Data Source Libraries
+    - https://github.com/databricks/
+        Databricks公司开源一些读取其他数据源的工程
+    - https://spark-packages.org/
+        Spark 框架生态工程
+    - 举例说明：
+-1. 读取avro格式的数据
+    avro：序列化数据系统，HADOOP生态系统中一员
+    - 网站：
+        https://spark-packages.org/package/databricks/spark-avro
+        https://github.com/databricks/spark-avro
+        针对Spark 1.6.1版本：
+        https://github.com/databricks/spark-avro/tree/v2.0.1
+        - 使用测试两种方式：
+    -a. bin/spark-shell 
+bin/spark-shell --packages com.databricks:spark-avro_2.10:2.0.1      
+        将JAR包下载在当前用户的 /home/hpsk/.ivy2/ 目录下
+            .ivy2 表示的 sbt（类似Maven）本地仓库
+    -b. IDEA中MAVEN工程加依赖
+<dependency>
+    <groupId>com.databricks<groupId>
+    <artifactId>spark-avro_2.10</artifactId>
+    <version>2.0.1</version>
+</dependency>
+-2. 读取CSV\TSV格式的数据
+    https://spark-packages.org/package/databricks/spark-csv
+    https://github.com/databricks/spark-csv
+    从Spark2.0开始已经融入到SparkSQL框架的内置数据源
+    - 命令行使用：
+        bin/spark-shell --packages com.databricks:spark-csv_2.10:1.5.0
+
+-3. 从MongoDB数据库中读取数据
+    https://spark-packages.org/package/Stratio/spark-mongodb
+    https://github.com/Stratio/spark-mongodb
+    作业：
+        -1. 搭建MongoDB环境
+        -2. SPARK SQL写数据到MongDB中
+        -3. SPARK SQL从MongDB读数据
+
+
+如何将RDD转换为DataFrame？？
+    http://spark.apache.org/docs/1.6.1/sql-programming-guide.html#interoperating-with-rdds
+    -1. 方式一：    
+        Inferring the Schema Using Reflection
+        -i, RDD[CASE CLASS]
+        -ii, rdd.toDF()   // 隐式转换
+        import sqlContext.implicits._
+实质：
+implicit def rddToDataFrameHolder[A <: Product : TypeTag](rdd: RDD[A]): DataFrameHolder = {
+    DataFrameHolder(_sqlContext.createDataFrame(rdd))
+  }
+        -iii, 另外一种方式
+            sqlContext.createDataFrame(rdd)
+    -2. 方式二：
+        Programmatically Specifying the Schema
+        i. RDD[Row]
+        ii. schema
+        iii. sqlContext.createDataFrame(rdd, schema)
+
+Run SQL on files directly
+    直接从SparkSQL支持的数据格式文件中读取数据到表中
+比如：
+    读取parquet格式文件
+    - spark-sql：
+SELECT * FROM parquet.`/datas/resources/users.parquet` ;
+SELECT * FROM json.`/datas/resources/people.json` ;
+
+
+
+SparkSQL中支持的函数使用
+    - object functions 
+比如：保留几位小数round(number, scale)
+    对EMP查询分析：获取各个部门的平均工资
+SELECT deptno, avg(sal) AS avg_sal FROM db_hive.emp GROUP BY deptno ;
+    对求取的平均值保留两位小数
+SELECT deptno, round(avg(sal), 2) AS avg_sal FROM db_hive.emp GROUP BY deptno ;    
+    作业：
+        关于正则表达式的两个函数：
+            - regexp_extract：使用正则提取值
+            - regexp_replace：使用正则替换值
+
+SparkSQL中也支持用户自定义函数
+    回顾Hive中自定义函数
+        - UDF：一对一
+        - UDAF：多对一，聚合函数，与group结合使用
+        - UDTF：一对多
+    注意一点：
+        - 在SparkSQL中支持UDF(SCALA\JAVA\PYTHON)和UDAF(SCALA\JAVA)
+        - 在Hive中定义的UDF、UDAF和UDTF都可以在SparkSQL中使用
+
+作业：
+    查找资料，完成SparkSQL中如何自定义UDAF函数？？
+        比如：获取最大值（雇员表中各个部门最高的工资）
+
+
+=========================================================
+Spark 1.6.0
+    SparkSQL出现对数据的抽象：Dataset
+Dataset
+    - 集合：分布式、强类型、对象
+    - 类似RDD 
+    - 对象存储的时候：Encoder
+        使得数据进行序列化，性能比较好，二进制文件
+
+DataFrame：
+    schema信息
+    Row() -> 弱类型
+
+Spark 2.0中
+    - DataFrame 与 Dataset API合并
+        只存在Dataset
+        DataFrame = Dataset[Row]
+    - SparkSession 
+        全新程序入口，可以读取数据，调度程序
+            SparkContext
+            SQLContext
+            SparkConf
+            HiveContext
+    - 可以不依赖与Hive MetaStore 
+        自己可以存储元数据，进行管理
+        Hive中的功能也都有
+
+========================================================
+Spark 2.x版本
+    - 依赖语言版本
+        SCALA：2.11.x 
+        MAVEN：3.3.9 以上
+    - 安装包目录
+        没有Spark1.x中的lib目录，变成jars目录，jar包模块化
+    - bin/spark-shell 默认的日志级别为WARN
+Spark context Web UI available at http://192.168.64.210:4040
+Spark context available as 'sc' (master = local[2], app id = local-1495379500723).
+Spark session available as 'spark'.
+说明：
+    - 第一句：
+        WEB UI监控地址，其实就是Driver运行机器的4040
+    - 第二句：
+        SparkContext实例sc，包含master及应用ID
+    - 第三句：
+        SparkSession实例spark
+    
+val df = spark.read.json("/datas/resources/people.json")
+
+
+报错：
+Exception in thread "main" java.lang.IllegalArgumentException: 
+    java.net.URISyntaxException:
+         Relative path in absolute URI: 
+         file:D:/bigdata-framework/learning-spark2/spark-warehouse
+
+

@@ -1,0 +1,152 @@
+
+注意一点：
+    在SCALA中的类Any类(Any Class)
+    Class Any is the root of the Scala class hierarchy. Every class in a Scala execution environment inherits directly or indirectly from this class.
+    - Any Class 类似于Java中的Object Class
+
+但是在SCALA中，与JAVA中关于数组不一样的地方：
+    在SCALA中数组分为可变数组（数组元素大小可以变化）和不可变数组
+
+
+SCALA中集合类
+    Seq[T](List[T])、Set[T]、Map[A, B]
+    -1, 都是泛型
+        类型而言，具体业务具体对待（看你存储的数据）
+    -2, 继承于Iterable[T]
+        def foreach[U](f: A => U): Unit
+        for(item <- List(1,2,3,4,5)) println
+    -3, 分为可变和不可变的
+        在JAVA中所有的集合(List, Set, Map)可变的
+        val：声明的一个变量，表示值不可变，官方推荐的方式
+        不可变：
+            集合中元素的个数不能改变，不是说元素的值不能改变
+        常见的三种集合
+                List        Set         Map
+        可变    ListArray    Set         Map 
+
+        不可变   List        Set         Map 
+
+        包不一样：
+            可变的集合：
+                scala.collection.mutable._
+            不可变的集合：
+                scala.collection.immutable._
+                默认使用的集合类型，可以在程序中补导入包即可使用
+
+
+集合类中四个主要个函数（高阶函数）
+    - def map[B](f: A => B): TraversableOnce[B]
+    - def flatMap[B](f: A => GenTraversableOnce[B]): TraversableOnce[B] 
+    - def withFilter(p: A => Boolean) 
+    - def filter(p: A => Boolean): TraversableOnce[A] 
+    
+
+对于List中排序函数来说：
+    -1, sorted 
+        默认的情况下，依据集合List中元素的 自然规则进行升序排序
+    -2, sortBy
+        指定元素的排序规则
+    -3, sortWith    
+        主要是针对集合中元素如果是复杂的类型，仅仅针对类型中某个值进行排序比较，制定规则
+
+
+SCALA中元组：
+    -1, 定义
+        使用一对 圆括号()  括起来
+        val tuple3 = (1, 2.0, "spark")
+    -2, 下标
+        访问元组中的元素下标重1开始
+        println(tuple3._3)
+    -3, 元素个数
+        最多22个元素
+    -4, 数据类型
+        任意的SCALA语言支持数据类型
+    -5, 特例
+        实际的企业中使用最多的属于 二元组， 元素的个数为2
+        val tuple2 = (key, value)
+
+
+在JAVA中Set的底层实现就是Map
+    HashSet<String> ====>  HashMap<String, Object>
+
+
+大数据分析计算框架中，经典案例【词频统计】WordCount
+    统计单词出现的次数
+
+
+对于JAVA和SCALA语言来说，运行程序必须在main方法中
+    - JAVA语言来说：main method 在class类中
+        public static void main(String[] args)
+        *.java - compile -> *.class -> JVM 
+        一个类产生一个class文件 class 就要多少文件
+    - SCALA语言来说，main method在object中
+        object认为是对象，里面可以有属性和方法，都是静态的
+        def main(args: Array[String])
+        *.scala  - compile - *.class -> JVM
+
+Java中接口iterface（JAVA8以前）
+    - 抽象方法
+        所有的方法只有声明，没有实现
+    - 常量
+        静态的常量，值不变的
+
+Scala 中Trait来说
+    - 方法
+        既可以是抽象方法，也可以是具体方法
+    - 属性
+        既可以常量，也可以说变量（可以修改）
+    - 类class继承trait，支持多重继承
+        class A extends B with C with D 
+同样的在SCALA语言的OOP编程中，也有抽象类，与JAVA中抽象类一样。
+
+
+在SCALA语言中，一个非常强大功能
+    模式匹配PatternMatch
+语法：
+    变量 match {
+        case value1 => do something
+        case value2 => do something
+        case value3 => do something
+        .......
+        case _ => do something 
+    }
+注意一点：
+    只要一个case分支满足并处理，就不会继续判断下一个case分支
+
+
+在企业开发中，通常情况下，至少将一个模块或者整个项目将会出现的异常进行封装到一个方法中（工具类），进行统一的处理。
+
+在SCALA中为了避免出现NullPointerException，有一个类Option
+    Option 子类如下：
+    sealed abstract class Option[+A] 
+    - None：没有值
+        case object None extends Option[Nothing] 
+    - Some：有值
+        final case class Some[+A](x: A) extends Option[A]
+
+
+Implicit Conversions
+    隐式转换
+        偷龙转凤，在不知不觉中进行转换操作
+    核心：
+        定义隐式转换函数，将某个类型转换为另外一个类型。
+    要点：
+        以implicit开头，而且最好要定义函数返回类型。
+    说明：
+        隐式转换函数写在哪里比较好呢？？？
+        - 推荐：
+            让SCALA程序自动的找到函数，进行转换
+            【函数放在元类型的伴生对象中】
+        - 常用
+            可以在程序中手动导入
+            import .....
+
+集合的列表的函数
+    def sorted[B >: A](implicit ord: Ordering[B])
+    使用implicit声明的函数的参数称为隐式参数
+
+    def sortBy[B](f: A => B)(implicit ord: Ordering[B])
+    有两个参数：
+        第一个参数：排序字段
+        第二个参数：隐式参数，指定排序升序还是降序，通常情况下，隐式参数放在另外的一个括号中，不与普通参数放在一起。
+

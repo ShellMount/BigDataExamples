@@ -1,4 +1,4 @@
-package com.setapi.sparkDemo.sparkCoreDemo
+package com.setapi.sparkDemo.spark_core_demo
 
 import java.text.SimpleDateFormat
 import java.util

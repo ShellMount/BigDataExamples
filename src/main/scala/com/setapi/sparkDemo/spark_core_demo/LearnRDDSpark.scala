@@ -1,6 +1,7 @@
-package com.setapi.sparkDemo.sparkCoreDemo
+package com.setapi.sparkDemo.spark_core_demo
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -76,7 +77,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   *
   **/
 
-object ModuleSpark {
+object LearnRDDSpark {
   // 日志设置
   Logger.getRootLogger.setLevel(Level.WARN)
   val logger = Logger.getLogger(this.getClass)
@@ -93,15 +94,14 @@ object ModuleSpark {
       * SparkContext 对象, Spark 分析的入口
       */
     val conf = new SparkConf()
-      .setAppName("ModuleSpark")
+      .setAppName("LearnRDDSpark")
       // 本地开发环境设置为local mode, 2线程
       // 实际部署的时候，通过提交命令行进行设置
-      // 开发环境设置：-Dspark.master=spark://192.168.0.211:7077
       .setMaster("local[2]")
       // 设置记录此应用的事件EventLog
       .set("spark.eventLog.enabled", "true")
       .set("spark.eventLog.compress", "true")
-      .set("spark.eventLog.dir", "hdfs://hnamenode:9000/datas/spark-running-logs/ModuleSpark")
+      .set("spark.eventLog.dir", "hdfs://hnamenode:9000/datas/spark-running-logs")
 
     // 创建SparkContext上下文对象
     val sc = SparkContext.getOrCreate(conf)
@@ -125,8 +125,15 @@ object ModuleSpark {
 
     // 对统计出的词频排序
     val sortedRDD = wordCountRDD.map(tuple => tuple.swap).sortByKey(false)
-    val sortedRDD2 = wordCountRDD.sortBy(_._2, false)
+    val sortedRDD2: RDD[(String, Int)] = wordCountRDD.sortBy(_._2, false)
 
+    println("==================================")
+    println(s"sortedRDD.toDebugString = ${sortedRDD.toDebugString}")
+    println(s"sortedRDD.partitions = ${sortedRDD.partitions.length}")
+
+
+
+    println("==================================")
 
     /**
       * 结果输出
@@ -137,7 +144,7 @@ object ModuleSpark {
       * 对RDD直接的操作，将在Executor中执行并显示。
       */
     // 本行结果显示在Executors，不会在Driver提交的控制台显示结果
-    wordCountRDD.foreach(println)
+    wordCountRDD.take(10).foreach(println)
 
     println("--------------SORT-----------------")
     sortedRDD.take(10).foreach(tuple => println(tuple._1 + "-->" + tuple._2))

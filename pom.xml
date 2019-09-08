@@ -40,6 +40,8 @@
             <version>2.4.3</version>
             <!--            <scope>runtime</scope>-->
         </dependency>
+
+        <!-- SPARK-SQL -->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.version}</artifactId>
@@ -97,6 +99,11 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-jdbc</artifactId>
             <version>3.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.spark-project.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <version>0.13.1</version>
         </dependency>
 
         <!-- HBASE -->

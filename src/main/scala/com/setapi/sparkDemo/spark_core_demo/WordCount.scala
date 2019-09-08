@@ -1,4 +1,4 @@
-package com.setapi.sparkDemo.sparkCoreDemo
+package com.setapi.sparkDemo.spark_core_demo
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}

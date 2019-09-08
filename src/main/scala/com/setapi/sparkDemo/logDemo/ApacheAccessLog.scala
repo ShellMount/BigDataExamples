@@ -16,7 +16,7 @@ dateTime: String,
 method: String,
 endpoint: String,
 protocol: String,
-resposeCode: Int,
+responseCode: Int,
 contentSize: Long)
 
 object ApacheAccessLog {

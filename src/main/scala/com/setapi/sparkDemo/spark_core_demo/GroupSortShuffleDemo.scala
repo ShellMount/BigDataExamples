@@ -1,4 +1,4 @@
-package com.setapi.sparkDemo.sparkCoreDemo
+package com.setapi.sparkDemo.spark_core_demo
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD

@@ -65,7 +65,7 @@ object LogAnalyzerSpark {
       */
     val responseCodeToCount = accessLogsRDD
       // 转换字段
-      .map(log => (log.resposeCode, 1))
+      .map(log => (log.responseCode, 1))
       // 聚合统计
       .reduceByKey(_ + _)
       // 由于Response Code的数量不多可以直接返回

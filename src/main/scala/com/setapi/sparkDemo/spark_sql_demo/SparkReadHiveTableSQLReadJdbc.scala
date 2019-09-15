@@ -64,9 +64,9 @@ object SparkReadHiveTableSQLReadJdbc {
     properties.put("user", "root")
     properties.put("password", "birdhome")
     properties.put("driver", "org.apache.hive.jdbc.HiveDriver")
-    properties.put("table", "dept")
+    properties.put("dbtable", "dept")
 
-    val df: DataFrame = spark.read.jdbc("jdbc:hive2://hdatanode1:10000/hiveonhdfs", "dept", properties)
+    val df: DataFrame = spark.read.jdbc("jdbc:hive2://hdatanode1:10000/hiveonhdfs", "hiveonhdfs.dept", properties)
     df.createOrReplaceTempView("dept")
 
 

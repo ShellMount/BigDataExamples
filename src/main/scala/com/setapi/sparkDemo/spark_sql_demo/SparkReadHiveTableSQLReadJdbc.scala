@@ -64,6 +64,7 @@ object SparkReadHiveTableSQLReadJdbc {
     properties.put("user", "root")
     properties.put("password", "birdhome")
     properties.put("driver", "org.apache.hive.jdbc.HiveDriver")
+    properties.put("table", "dept")
 
     val df: DataFrame = spark.read.jdbc("jdbc:hive2://hdatanode1:10000/hiveonhdfs", "dept", properties)
     df.createOrReplaceTempView("dept")
@@ -72,10 +73,16 @@ object SparkReadHiveTableSQLReadJdbc {
     println("通过JDBC读取出来的HIVE TABLE DataFrame:")
     println(df.printSchema())
 
+    /**
+      * 以上能够读取到HIVE表结构
+      * 但不能识别具体列，原因不明
+      */
+
     //spark.sql("SELECT * FROM dept").show()
-    df.select("dept.dname").show(1)
+    //df.select(df(raw"dept.dname")).show(1)
 
-
+    // ERROR
+    //spark.read.table("dept").show()`
     /**
       * 程序结束
       */

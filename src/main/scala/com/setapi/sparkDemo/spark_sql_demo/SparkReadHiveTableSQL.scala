@@ -1,10 +1,8 @@
 package com.setapi.sparkDemo.spark_sql_demo
 
-import java.util.Properties
-
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -33,6 +31,12 @@ object SparkReadHiveTableSQL extends Throwable {
     val sparkConf = new SparkConf()
       .setAppName("SparkReadHiveTableSQL")
       .setMaster("local[2]")
+      .set("hive.server2.thrift.port", "10000")
+      .set("hive.server2.thrift.bind.host", "192.168.0.212")
+      .set("javax.jdo.option.ConnectionURL", "jdbc:mysql://192.168.0.211:3306/hive")
+      .set("javax.jdo.option.ConnectionDriverName", "com.mysql.jdbc.Driver")
+      .set("javax.jdo.option.ConnectionUserName", "root")
+      .set("javax.jdo.option.ConnectionPassword", "birdhome")
 
 
     // 创建 SparkContext
@@ -68,30 +72,7 @@ object SparkReadHiveTableSQL extends Throwable {
     //    sqlContext.sql("SELECT * FROM emp_partition").show()
 
 
-
-    /**
-      * 从JDBC中读取DataFrame数据
-      *
-      * 未成功的连JDBC连接
-      */
-//    val properties = new Properties()
-//    properties.put("user", "root")
-//    properties.put("password", "birdhome")
-//
-//
-//    val hiveContext = new HiveContext(sc)
-//    hiveContext.sql("SELECT * FROM hiveonhdfs.dept").show()
-//
-//    val df: DataFrame = sqlContext.read.jdbc("jdbc:hive2://hdatanode1:10000/hiveonhdfs", "dept", properties)
-//    val df2: DataFrame = hiveContext.read.format("jdbc")
-//      .option("url", "jdbc:hive2://hdatanode1:10000/hiveonhdfs")
-//      .option("dbtable", "dept")
-//      .option("user", "root")
-//      .option("password", "birdhome")
-//      .load()
-//
-//    println("通过JDBC读取出来的HIVE TABLE DataFrame:")
-//    df2.show()
+    sqlContext.read.table("hiveonhdfs.dept")
 
     /**
       * 程序结束

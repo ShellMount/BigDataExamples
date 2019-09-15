@@ -2002,6 +2002,17 @@ export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=18080 \
 
 
 
+-------------------------------------
+SPARK中关联HIVE thrift server(HiveServer2)
+/opt/spark/spark-2.4.3-bin-hadoop2.7/sbin/start-thriftserver.sh \
+ --hiveconf hive.server2.thrift.port=10000 \
+ --hiveconf hive.server2.thrift.bind.host=hdatanode1 \
+ --hiveconf hive.server2.webui.port=10002 \
+ --hiveconf hive.server2.webui.host=hdatanode1 \
+ --conf spark.sql.shuffle.partitions=5 \
+ --master local[2]
+
+
 
 
 

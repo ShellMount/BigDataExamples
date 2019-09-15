@@ -23,7 +23,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   * to connect the thrift server
   **/
 
-object SparkReadHiveTableSqlJdbc {
+object SparkReadHiveTableSqlJdbcHive {
   // 日志设置
   Logger.getRootLogger.setLevel(Level.WARN)
   val logger = Logger.getLogger(this.getClass)

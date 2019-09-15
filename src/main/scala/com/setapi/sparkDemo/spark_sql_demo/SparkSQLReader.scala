@@ -86,24 +86,6 @@ object SparkSQLReader {
 
 
     /**
-      * 读写MongoDb
-      * 未成功的案例
-      */
-    println("----> MongoDb DataFrame: ")
-    val options = Map(
-      "host" -> "192.168.0.110:27017",
-      "database" -> "vnpy",
-      "collection" -> "db_tick_data"
-    )
-
-    val dfMongoDb = sqlContext.read.format("com.stratio.datasource.mongodb")
-        .options(options).load()
-    // dfMongoDb.show()
-
-
-
-
-    /**
       * 程序结束
       */
     Thread.sleep(10000 * 1000)

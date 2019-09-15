@@ -1,20 +1,24 @@
 package com.setapi.sparkDemo.spark_sql_demo
 
+import com.mongodb.spark.MongoSpark
 import com.stratio.datasource.mongodb._
 import com.stratio.datasource.mongodb.config.MongodbConfig._
 import com.stratio.datasource.mongodb.config.MongodbConfigBuilder
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+
 /**
   *
   * Created by ShellMount on 2019/8/25
   * 使用SparkSQL实现 MongoDb 读写
   *
+  * https://blog.csdn.net/qq_33689414/article/details/83421766
+  * https://docs.mongodb.com/spark-connector/current/scala-api/
+  *
   * 程序调试未成功
-  * 成功的DEMO见：SparkSessionReadMongoDb.scala
   **/
 
-object SparkReadMongoDbTableSQL {
+object SparkSessionReadMongoDb {
   // 日志设置
   Logger.getRootLogger.setLevel(Level.WARN)
   val logger = Logger.getLogger(this.getClass)
@@ -23,25 +27,14 @@ object SparkReadMongoDbTableSQL {
 
     // 创建 SparkSession
     val sparkSession = SparkSession.builder()
-      .appName("SparkReadMongoDbTableSQL")
+      .appName("SparkSessionReadMongoDb")
       .master("local[2]")
       .config("spark.sql.warehouse.dir", "file:///E:\\APP\\BigData\\api\\spark-warehouse")
-      .enableHiveSupport()
+      .config("spark.mongodb.input.uri", "mongodb://192.168.0.110:27017/vnpy.db_tick_data")
       .getOrCreate()
 
-
-    val builder = MongodbConfigBuilder(Map(
-      Host -> List("192.168.0.110:27017"),
-      Database -> "vnpy",
-      Collection ->"db_tick_data",
-      SamplingRatio -> 1.0,
-      WriteConcern -> "normal")
-    )
-    val readConfig = builder.build()
-    val mongoRDD = sparkSession.sqlContext.fromMongoDB(readConfig)
-    mongoRDD.createTempView("db_tick_data")
-    val dataFrame = sparkSession.sql("SELECT * FROM db_tick_data")
-    dataFrame.show
+    val df = MongoSpark.load(sparkSession)
+    df.show
 
 
     /**

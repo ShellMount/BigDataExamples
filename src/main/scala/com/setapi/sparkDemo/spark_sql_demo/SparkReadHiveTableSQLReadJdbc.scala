@@ -49,7 +49,8 @@ object SparkReadHiveTableSQLReadJdbc {
       .builder()
       .appName("SparkReadHiveTableSQLReadJdbc")
       .master("local[2]")
-      .config("spark.some.config.option", "some-value")
+      .config("spark.sql.warehouse.dir", "file:///E:\\APP\\BigData\\api\\spark-warehouse")
+      .enableHiveSupport()
       .getOrCreate()
 
     // For implicit conversions like converting RDDs to DataFrames
@@ -76,6 +77,7 @@ object SparkReadHiveTableSQLReadJdbc {
     /**
       * 以上能够读取到HIVE表结构
       * 但不能识别具体列，原因不明
+      * 中间不能有.号。如何处理?
       */
 
     //spark.sql("SELECT * FROM dept").show()

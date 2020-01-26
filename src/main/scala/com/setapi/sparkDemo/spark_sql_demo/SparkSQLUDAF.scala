@@ -1,7 +1,6 @@
 package com.setapi.sparkDemo.spark_sql_demo
 
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -13,7 +12,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object SparkSQLUDAF {
   // 日志设置
-  Logger.getRootLogger.setLevel(Level.WARN)
+  // Logger.getRootLogger.setLevel(Level.WARN)
   val logger = Logger.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
@@ -30,7 +29,7 @@ object SparkSQLUDAF {
       * 以转换为DataFrame
       * 它是SparkSQL的入口
       */
-    val sqlContext = SQLContext.getOrCreate(sc)
+    val sqlContext: SQLContext = SQLContext.getOrCreate(sc)
 
 
     /**
@@ -67,11 +66,11 @@ object SparkSQLUDAF {
     sqlContext.sql("SELECT age, addAge(age) FROM emp").show()
 
 
-
     /**
       * 程序结束
       */
     Thread.sleep(10000 * 1000)
     sc.stop()
   }
+  
 }

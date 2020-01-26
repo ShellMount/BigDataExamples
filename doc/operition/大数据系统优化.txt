@@ -1964,7 +1964,7 @@ daemonize yes
 logfile "redis.log"
 
 [root@hnamenode redis-3.2.13]# ./src/redis-server redis.conf 
-redis-cli -h hnamenode 
+./src/redis-cli -h hnamenode 
 
 
 开发客户端： jedis

@@ -62,6 +62,7 @@ object RealOrderJsonProducer {
           messageBox += new KeyedMessage(Constant.TOPIC, orderItem.orderId, orderJson)
         }
 
+        producer.send()
         producer.send(messageBox: _*)
         Thread.sleep(RandomUtil.getRandomNum(100) * 100)
       }

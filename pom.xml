@@ -24,6 +24,17 @@
         <hdfs.version>2.9.2</hdfs.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>aliyun</id>
+            <name>aliyun Repository</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- SPARK -->
         <dependency>
@@ -64,9 +75,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>0.8.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>2.3.0</version>
         </dependency>
+
 
         <!-- HDFS -->
         <dependency>
@@ -92,29 +109,29 @@
 
 
         <!-- HIVE -->
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-exec</artifactId>
-            <version>3.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-jdbc</artifactId>
-            <version>3.1.1</version>
-<!--            <version>1.2.1</version>-->
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.spark-project.hive</groupId>-->
-<!--            <artifactId>hive-jdbc</artifactId>-->
-<!--&lt;!&ndash;            <version>0.13.1</version>&ndash;&gt;-->
-<!--            <version>1.2.1.spark2</version>-->
-<!--        </dependency>-->
-        <!-- https://mvnrepository.com/artifact/org.apache.hive/hive-beeline -->
 <!--        <dependency>-->
 <!--            <groupId>org.apache.hive</groupId>-->
-<!--            <artifactId>hive-beeline</artifactId>-->
-<!--            <version>1.2.1</version>-->
+<!--            <artifactId>hive-exec</artifactId>-->
+<!--            <version>3.1.1</version>-->
 <!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.hive</groupId>-->
+<!--            <artifactId>hive-jdbc</artifactId>-->
+<!--            <version>3.1.1</version>-->
+<!--            &lt;!&ndash;            <version>1.2.1</version>&ndash;&gt;-->
+<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.spark-project.hive</groupId>-->
+        <!--            <artifactId>hive-jdbc</artifactId>-->
+        <!--&lt;!&ndash;            <version>0.13.1</version>&ndash;&gt;-->
+        <!--            <version>1.2.1.spark2</version>-->
+        <!--        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.apache.hive/hive-beeline -->
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.hive</groupId>-->
+        <!--            <artifactId>hive-beeline</artifactId>-->
+        <!--            <version>1.2.1</version>-->
+        <!--        </dependency>-->
 
 
         <!-- HBASE -->
@@ -203,9 +220,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table</artifactId>
+            <artifactId>flink-cep-scala_2.11</artifactId>
             <version>1.9.1</version>
         </dependency>
+
+        <!--<dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table</artifactId>
+            <version>1.9.1</version>
+        </dependency>-->
         <dependency>
             <groupId>org.apache.bahir</groupId>
             <artifactId>flink-connector-redis_2.11</artifactId>
@@ -216,7 +239,6 @@
             <artifactId>akka-actor_2.11</artifactId>
             <version>2.5.27</version>
         </dependency>
-
 
 
         <!-- REDIS -->
@@ -267,7 +289,6 @@
         </dependency>
 
 
-
         <dependency>
             <groupId>cz.mallat.uasparser</groupId>
             <artifactId>uasparser</artifactId>
@@ -310,11 +331,11 @@
             <artifactId>breeze_2.11</artifactId>
             <version>0.13.2</version>
         </dependency>
-        <dependency>
-            <groupId>com.github.fommil.netlib</groupId>
-            <artifactId>all</artifactId>
-            <version>1.1.2</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.github.fommil.netlib</groupId>-->
+<!--            <artifactId>all</artifactId>-->
+<!--            <version>1.1.2</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.jblas</groupId>
             <artifactId>jblas</artifactId>

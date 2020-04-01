@@ -1,4 +1,4 @@
-package com.setapi.flink_user_behavior_analysis.hot_items_analysis
+package com.setapi.flink_user_behavior_analysis.pv_uv_analysis
 
 /**
   * 输入数据

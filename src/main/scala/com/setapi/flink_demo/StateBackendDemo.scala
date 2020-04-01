@@ -62,13 +62,13 @@ object StateBackendDemo {
 
     // TODO: 计算连续 2 次温度变化超过 一定限时 报警
     val procesedStream2 = stream.keyBy(_.id)
-      .process(new TempChangeAlert(10.0))
+      .process(new TempChangeAlert3(10.0))
 
     procesedStream2.print("Alert:")
 
     // TODO: 用 FlatMap 实现上面的功能
     val procesedStream3 = stream.keyBy(_.id)
-      .flatMap(new TempChangeAlert2(10.0))
+      .flatMap(new TempChangeAlert4(10.0))
     procesedStream3.print("Alert From FlatMapProcess:")
 
     // TODO: 用 flatMapWithState 实现上面的功能
@@ -95,7 +95,7 @@ object StateBackendDemo {
 }
 
 
-class TempChangeAlert(threshold: Double) extends KeyedProcessFunction[String, SensorReading, (String, Double, Double)] {
+class TempChangeAlert3(threshold: Double) extends KeyedProcessFunction[String, SensorReading, (String, Double, Double)] {
   // 定义一个状态，保存传感器，上一个数据的温度值
   lazy val lastTemperature: ValueState[Double] = getRuntimeContext.getState(new ValueStateDescriptor[Double]("lastTemperature", classOf[Double]))
 
@@ -112,7 +112,7 @@ class TempChangeAlert(threshold: Double) extends KeyedProcessFunction[String, Se
   }
 }
 
-class TempChangeAlert2(threshold: Double) extends RichFlatMapFunction[SensorReading, (String, Double, Double)] {
+class TempChangeAlert4(threshold: Double) extends RichFlatMapFunction[SensorReading, (String, Double, Double)] {
   // 定义一个状态，保存传感器，上一个数据的温度值
   private var lastTemperature: ValueState[Double] = _
 

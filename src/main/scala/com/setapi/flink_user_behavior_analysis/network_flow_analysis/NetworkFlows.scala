@@ -1,9 +1,9 @@
 package com.setapi.flink_user_behavior_analysis.network_flow_analysis
 
 import java.sql.Timestamp
+import java.text.SimpleDateFormat
 import java.util.Properties
 
-import com.setapi.flink_user_behavior_analysis.case_class.{ItemViewCount, UserBehavior}
 import org.apache.flink.api.common.functions.{AggregateFunction, IterationRuntimeContext, RuntimeContext}
 import org.apache.flink.api.common.serialization.SimpleStringSchema
 import org.apache.flink.api.common.state.{ListState, ListStateDescriptor}
@@ -11,6 +11,7 @@ import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.scala.function.WindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -21,9 +22,9 @@ import org.apache.flink.util.Collector
 import scala.collection.mutable.ListBuffer
 
 /**
-  * 热门商品统计
+  * 流量统计
   */
-object HotItems {
+object NetworkFlows {
   def main(args: Array[String]): Unit = {
     // 1. 创建执行环境
     val env = StreamExecutionEnvironment.getExecutionEnvironment
@@ -31,43 +32,49 @@ object HotItems {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
 
     // 2. 读取数据
-    val properties = new Properties()
+    /*val properties = new Properties()
     properties.setProperty("bootstrap.servers", "192.168.0.213:9092")
     properties.setProperty("group.id", "flink-consumer-group")
     properties.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     properties.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
-    properties.setProperty("auto.offset.reset", "latest")
+    properties.setProperty("auto.offset.reset", "latest")*/
 
-    // val dataStream = env.readTextFile("E:\\APP\\BigData\\api\\data\\flink\\UserBehavior.csv")
-    val dataStream = env.addSource(new FlinkKafkaConsumer[String]("HotItems", new SimpleStringSchema(), properties))
+    val dataStream = env.readTextFile("E:\\APP\\BigData\\api\\data\\flink\\apache.log")
       .map(record => {
-        val dataArray = record.split(",")
-        UserBehavior(
-          dataArray(0).trim.toLong,
-          dataArray(1).trim.toLong,
-          dataArray(2).trim.toInt,
-          dataArray(3).trim,
-          dataArray(4).trim.toLong
+        val dataArray = record.split(" ")
+        // 定义时间转换
+        val simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy:HH:mm:ss")
+        val timestamp = simpleDateFormat.parse(dataArray(3).trim).getTime
+        ApacheLogEvent(
+          dataArray(0).trim,
+          dataArray(1).trim,
+          timestamp,
+          dataArray(5).trim,
+          dataArray(6).trim
         )
       })
-      .assignAscendingTimestamps(_.timestamp * 1000L)
+      // 乱序数据定义TS
+      .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor[ApacheLogEvent](Time.seconds(10)) { // 延迟容忍 10 秒
+        override def extractTimestamp(element: ApacheLogEvent): Long = element.eventTime // 毫秒不必再乘以1000
+      })
 
     // 3. transform 处理数据
     val processedStream = dataStream
-      .filter(_.behavior.equals("pv"))
-      .keyBy(_.itemId)
-      .timeWindow(Time.hours(1), Time.minutes(5))
+      .keyBy(_.url)
+      .timeWindow(Time.minutes(10), Time.seconds(5))
+      // 迟到数据可更新
+      .allowedLateness(Time.seconds(60))
       // 自定义预聚合、窗口输出
       .aggregate(new CountAgg(), new WindowResult())
       // 按照窗口分组
       .keyBy(_.windowEnd)
       // 取TopN
-      .process(new TopHotItems(20))
+      .process(new TopHotUrls(20))
 
     // 4. sink: 控制台输出
     processedStream.print()
 
-    env.execute("hot items job")
+    env.execute("hot url job")
   }
 }
 
@@ -78,10 +85,10 @@ object HotItems {
   * 结果：累加结果
   * 合并：多个分区的值累加
   */
-class CountAgg() extends AggregateFunction[UserBehavior, Long, Long] {
+class CountAgg() extends AggregateFunction[ApacheLogEvent, Long, Long] {
   override def createAccumulator(): Long = 0L
 
-  override def add(in: UserBehavior, acc: Long): Long = acc + 1
+  override def add(in: ApacheLogEvent, acc: Long): Long = acc + 1
 
   override def getResult(acc: Long): Long = acc
 
@@ -89,27 +96,12 @@ class CountAgg() extends AggregateFunction[UserBehavior, Long, Long] {
 }
 
 /**
-  * 自定义聚合：平均值
-  * 累加求和: Long
-  * 数量计数: Int
-  */
-class AverageAgg() extends AggregateFunction[UserBehavior, (Long, Int), Double] {
-  override def createAccumulator(): (Long, Int) = (0L, 0)
-
-  override def add(in: UserBehavior, acc: (Long, Int)): (Long, Int) = (acc._1 + in.timestamp, acc._2 + 1)
-
-  override def getResult(acc: (Long, Int)): Double = acc._1 / acc._2
-
-  override def merge(acc: (Long, Int), acc1: (Long, Int)): (Long, Int) = (acc._1 + acc1._1, acc._2 + acc1._2)
-}
-
-/**
   * 自定义窗口函数
-  * 输出 ItemViewCount
+  * 输出 UrlViewCount
   */
-class WindowResult() extends WindowFunction[Long, ItemViewCount, Long, TimeWindow] {
-  override def apply(key: Long, window: TimeWindow, input: Iterable[Long], out: Collector[ItemViewCount]): Unit = {
-    out.collect(ItemViewCount(key, window.getEnd, input.iterator.next()))
+class WindowResult() extends WindowFunction[Long, UrlViewCount, String, TimeWindow] {
+  override def apply(key: String, window: TimeWindow, input: Iterable[Long], out: Collector[UrlViewCount]): Unit = {
+    out.collect(UrlViewCount(key, window.getEnd, input.iterator.next()))
   }
 }
 
@@ -118,10 +110,11 @@ class WindowResult() extends WindowFunction[Long, ItemViewCount, Long, TimeWindo
   *
   * @param topSize
   */
-class TopHotItems(topSize: Int) extends KeyedProcessFunction[Long, ItemViewCount, String] {
-  private var itemState: ListState[ItemViewCount] = _
+class TopHotUrls(topSize: Int) extends KeyedProcessFunction[Long, UrlViewCount, String] {
+  // 也可在 open 阶段初始化
+  lazy val itemState: ListState[UrlViewCount] = getRuntimeContext.getListState(new ListStateDescriptor[UrlViewCount]("urlState", classOf[UrlViewCount]))
 
-  override def processElement(value: ItemViewCount, ctx: KeyedProcessFunction[Long, ItemViewCount, String]#Context, out: Collector[String]): Unit = {
+  override def processElement(value: UrlViewCount, ctx: KeyedProcessFunction[Long, UrlViewCount, String]#Context, out: Collector[String]): Unit = {
     // 把每条数据存入状态列表
     itemState.add(value)
     // 注册定时器
@@ -129,17 +122,17 @@ class TopHotItems(topSize: Int) extends KeyedProcessFunction[Long, ItemViewCount
   }
 
   // 定时器触发时，对所有数据排序，并输出结果
-  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[Long, ItemViewCount, String]#OnTimerContext, out: Collector[String]): Unit = {
+  override def onTimer(timestamp: Long, ctx: KeyedProcessFunction[Long, UrlViewCount, String]#OnTimerContext, out: Collector[String]): Unit = {
     // 将所有 state 中的数据取出
-    val allItems: ListBuffer[ItemViewCount] = new ListBuffer[ItemViewCount]()
+    val allItems: ListBuffer[UrlViewCount] = new ListBuffer[UrlViewCount]()
 
-    import scala.collection.JavaConversions._
-    for (item <- itemState.get()) {
-      allItems += item
+    val iter = itemState.get().iterator()
+    while (iter.hasNext) {
+      allItems += iter.next()
     }
 
     // 按照count大小排序
-    val sortedItems = allItems.sortBy(_.count)(Ordering.Long.reverse).take(topSize)
+    val sortedItems = allItems.sortWith(_.count > _.count).take(topSize)
 
     // 清空状态: 在 close 时清空?
     itemState.clear()
@@ -156,10 +149,10 @@ class TopHotItems(topSize: Int) extends KeyedProcessFunction[Long, ItemViewCount
       result.append("No.")
         .append(i + 1)
         .append(": ")
-        .append("商品ID=")
-        .append(currentItem.itemId)
-        .append(" 浏览量=")
+        .append("浏览量=")
         .append(currentItem.count)
+        .append(" URL=")
+        .append(currentItem.url)
         .append("\n")
     }
 
@@ -175,7 +168,8 @@ class TopHotItems(topSize: Int) extends KeyedProcessFunction[Long, ItemViewCount
   override def getIterationRuntimeContext: IterationRuntimeContext = super.getIterationRuntimeContext
 
   override def open(parameters: Configuration): Unit = {
-    itemState = getRuntimeContext.getListState(new ListStateDescriptor[ItemViewCount]("itemState", classOf[ItemViewCount]))
+
+    // itemState = getRuntimeContext.getListState(new ListStateDescriptor[UrlViewCount]("itemState", classOf[UrlViewCount]))
   }
 
   override def close(): Unit = {

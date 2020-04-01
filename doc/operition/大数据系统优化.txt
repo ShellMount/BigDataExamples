@@ -1090,7 +1090,7 @@ zookeeper:
 /opt/zookeeper/apache-zookeeper-3.5.5-bin/bin/zkServer.sh  start
 
 kafka:
-./bin/kafka-server-start.sh config/server.properties
+./bin/kafka-server-start.sh config/server.properties &
 
 创建TOPIC
 ./bin/kafka-topics.sh \

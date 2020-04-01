@@ -3,8 +3,8 @@ package com.setapi.sparkDemo.spark_sql_demo
 import java.util.Properties
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 /**
   *
@@ -49,7 +49,6 @@ object SparkReadMysqlTableSQLReadJdbc {
     /**
       * 从JDBC中读取DataFrame数据
       *
-      * 未成功的连JDBC连接
       */
     val properties = new Properties()
     properties.put("user", "root")

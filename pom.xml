@@ -21,7 +21,7 @@
         <scala.version>2.11</scala.version>
         <uasparser.version>0.6.1</uasparser.version>
         <!-- important for sparksql connect to hive -->
-        <hdfs.version>2.9.2</hdfs.version>
+        <hdfs.version>2.10.1</hdfs.version>
     </properties>
 
     <repositories>
